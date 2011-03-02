@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, MainActivity!</string>
+    <string name="app_name">Classico</string>
+    
+    <string name="search_label">Dictionary</string>
+    <string name="search_hint">Search the dictionary</string>
+    
+     <string name="settings_description">Definitions of words</string>
+    <string name="global">Search nonsense words</string>
+    <string name="search_instructions">Press the search key to look up a word</string>
+    <string name="search_results">Search results for </string>
+    
+      <string name="no_results">No results found for \"%s\"</string>
+      
+          <plurals name="search_results">
+      <item quantity="one">%1$d result for \"%2$s\": </item>
+      <item quantity="other">%1$d results for \"%2$s\": </item>
+    </plurals>
+    
+    
+</resources>
