@@ -22,7 +22,7 @@ public class ComposerProvider extends ContentProvider{
 	public static final String DEFINITION_MIME_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE +
 	"/vnd.evgeny.classico";
 
-	private ClassicoDatabase mClassico;
+	//private ClassicoDatabase mClassico;
 
 	// UriMatcher stuff
 	private static final int SEARCH_WORDS = 0;
@@ -90,7 +90,7 @@ public class ComposerProvider extends ContentProvider{
 	@Override
 	public boolean onCreate() {
 		Log.w(TAG, "onCreate" );
-		mClassico = new ClassicoDatabase(getContext());
+		//mClassico = new ClassicoDatabase(getContext());
 		return true;
 	}
 
@@ -126,7 +126,8 @@ public class ComposerProvider extends ContentProvider{
 				ClassicoDatabase.KEY_COMPOSITION,
 				SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID};
 
-		return mClassico.getComposerMatches(query, columns);
+		//return mClassico.getComposerMatches(query, columns);
+		return ClassicoDatabase.getComposerMatches(query, columns);
 	}
 
 	private Cursor search(String query) {
@@ -136,7 +137,8 @@ public class ComposerProvider extends ContentProvider{
 				ClassicoDatabase.KEY_COMPOSER,
 				ClassicoDatabase.KEY_COMPOSITION};
 
-		return mClassico.getComposerMatches(query, columns);
+		//return mClassico.getComposerMatches(query, columns);
+		return ClassicoDatabase.getComposerMatches(query, columns);
 	}
 
 	private Cursor getComposition(Uri uri) {
@@ -146,7 +148,8 @@ public class ComposerProvider extends ContentProvider{
 				ClassicoDatabase.KEY_COMPOSITION,
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 
-		return mClassico.getComposer(rowId, columns);
+		//return mClassico.getComposer(rowId, columns);
+		return ClassicoDatabase.getComposer(rowId, columns);
 	}
 
 	@Override

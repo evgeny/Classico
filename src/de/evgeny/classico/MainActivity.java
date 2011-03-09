@@ -50,9 +50,9 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.main);		
-		
 		//test
-		ClassicoDatabase db = new ClassicoDatabase(this, mHandler);
+		//ClassicoDatabase db = new ClassicoDatabase(this, mHandler);
+		ClassicoDatabase.init(this, mHandler);
 		//end test
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list);
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
 
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
-			// handles a click on a search suggestion; launches activity to show word
+			// handles a click on a search suggestion; launches activity to show composition
 			Intent wordIntent = new Intent(this, CompositionActivity.class);
 			wordIntent.setData(intent.getData());
 			startActivity(wordIntent);
