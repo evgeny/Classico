@@ -33,40 +33,23 @@ class ClassicoDatabase {
 	private static final String FTS_VIRTUAL_TABLE = "FTSclassico";
 	private static final int DATABASE_VERSION = 2;
 
-	private static ClassicoOpenHelper sDatabaseOpenHelper;
+	//private static ClassicoOpenHelper sDatabaseOpenHelper;
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
 	private static SQLiteDatabase sDatabase;
 	private static Context sContext;
-
-
 	public static Handler sHandler;
 
-	/**
-	 * Constructor
-	 * @param context The Context within which to work, used to create the DB
-	 */
-	//    public ClassicoDatabase(Context context) {
-	//    	Log.d(TAG, "onCreate(): ");
-	//        sDatabaseOpenHelper = new ClassicoOpenHelper(context);        
-	//    }
-	//    
-	//    public ClassicoDatabase(Context context, Handler handler) {
-	//    	Log.d(TAG, "onCreate() with handler: ");
-	//        sDatabaseOpenHelper = new ClassicoOpenHelper(context);
-	//        sHandler = handler;
-	//        //open db to start load the data
-	//        sDatabaseOpenHelper.getReadableDatabase();
-	//        //mDatabaseOpenHelper.loadClassico();
-	//    }
-
+	
 	public static void init(Context context, Handler handler) {
 		Log.d(TAG, "init() with handler: ");
-		sDatabaseOpenHelper = new ClassicoOpenHelper(context);
+		//sDatabaseOpenHelper = new ClassicoOpenHelper(context);
 		sHandler = handler;
 		sContext = context;
 		//open db to start load the data
-		sDatabase = sDatabaseOpenHelper.getReadableDatabase();   
-		loadClassico();
+		//sDatabase = sDatabaseOpenHelper.getReadableDatabase();
+		sDatabase = SQLiteDatabase.openDatabase("/sdcard/classico", null, SQLiteDatabase.OPEN_READONLY);
+		
+		//loadClassico();
 	}
 	/**
 	 * Builds a map for all columns that may be requested, which will be given to the 
@@ -162,16 +145,13 @@ class ClassicoDatabase {
 	 * Starts a thread to load the database table with words
 	 */
 	public static void loadClassico() {
-		Log.w(TAG, "load database");        	
-		sHandler.sendEmptyMessage(0);
+		Log.w(TAG, "load database");        			
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					Message msg = sHandler.obtainMessage(MainActivity.LOAD_DATA_START);
-					msg.sendToTarget();
+					sHandler.sendEmptyMessage(MainActivity.LOAD_DATA_START);					
 					loadCompositions();
-					msg = sHandler.obtainMessage(MainActivity.LOAD_DATA_FINISH);
-					msg.sendToTarget();
+					sHandler.sendEmptyMessage(MainActivity.LOAD_DATA_FINISH);					
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -236,44 +216,44 @@ class ClassicoDatabase {
 	/**
 	 * This creates/opens the database.
 	 */
-	private static class ClassicoOpenHelper extends SQLiteOpenHelper {
-
-		private final Context mHelperContext;
-		private static SQLiteDatabase mDatabase;
-
-		/* Note that FTS3 does not support column constraints and thus, you cannot
-		 * declare a primary key. However, "rowid" is automatically used as a unique
-		 * identifier, so when making requests, we will use "_id" as an alias for "rowid"
-		 */
-		private static final String FTS_TABLE_CREATE =
-			"CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
-			" USING fts3 (" +
-			KEY_COMPOSER + ", " +
-			KEY_COMPOSITION + ", " +
-			KEY_COMPOSITION_ID + ");";
-
-
-		ClassicoOpenHelper(Context context) {        	
-			super(context, DATABASE_NAME, null, DATABASE_VERSION);
-			Log.w(TAG, "classicoOpenHelper");
-			mHelperContext = context;
-		}
-
-		@Override
-		public void onCreate(SQLiteDatabase db) {
-			Log.d(TAG, "onCreate helper");
-
-			mDatabase = db;            
-			mDatabase.execSQL(FTS_TABLE_CREATE);
-			//loadClassico();
-		}
-
-		@Override
-		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-					+ newVersion + ", which will destroy all old data");
-			db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
-			onCreate(db);
-		}
-	}
+//	private static class ClassicoOpenHelper extends SQLiteOpenHelper {
+//
+//		private final Context mHelperContext;
+//		private static SQLiteDatabase mDatabase;
+//
+//		/* Note that FTS3 does not support column constraints and thus, you cannot
+//		 * declare a primary key. However, "rowid" is automatically used as a unique
+//		 * identifier, so when making requests, we will use "_id" as an alias for "rowid"
+//		 */
+//		private static final String FTS_TABLE_CREATE =
+//			"CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
+//			" USING fts3 (" +
+//			KEY_COMPOSER + ", " +
+//			KEY_COMPOSITION + ", " +
+//			KEY_COMPOSITION_ID + ");";
+//
+//
+//		ClassicoOpenHelper(Context context) {        	
+//			super(context, DATABASE_NAME, null, DATABASE_VERSION);
+//			Log.w(TAG, "classicoOpenHelper");
+//			mHelperContext = context;
+//		}
+//
+//		@Override
+//		public void onCreate(SQLiteDatabase db) {
+//			Log.d(TAG, "onCreate helper");
+//
+//			mDatabase = db;            
+//			mDatabase.execSQL(FTS_TABLE_CREATE);
+//			//loadClassico();
+//		}
+//
+//		@Override
+//		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+//			Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
+//					+ newVersion + ", which will destroy all old data");
+//			db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
+//			onCreate(db);
+//		}
+//	}
 }

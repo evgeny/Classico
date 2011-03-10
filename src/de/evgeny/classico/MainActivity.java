@@ -36,8 +36,8 @@ public class MainActivity extends Activity {
 				setTitle("load data...");
 				break;
 			case LOAD_DATA_FINISH:
-				setProgressBarIndeterminateVisibility(true);
-				setTitle("load complete");
+				setProgressBarIndeterminateVisibility(false);
+				setTitle(R.string.app_name);
 				break;
 			default:
 				break;
