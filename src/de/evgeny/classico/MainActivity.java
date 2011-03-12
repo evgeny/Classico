@@ -48,6 +48,8 @@ public class MainActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		Log.d(TAG, "onCreate(): ");
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.main);		
 		//test
@@ -57,8 +59,14 @@ public class MainActivity extends Activity {
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list);
 
-		Intent intent = getIntent();
-
+		onNewIntent(getIntent());		
+	}
+	
+	@Override
+	protected void onNewIntent(Intent intent) {	
+		super.onNewIntent(intent);
+		Log.d(TAG, "onNewIntent(): ");
+		
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
 			// handles a click on a search suggestion; launches activity to show composition
@@ -67,10 +75,9 @@ public class MainActivity extends Activity {
 			startActivity(wordIntent);
 			finish();
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-			Log.d(TAG, "ACTION_SEARCH");
 			// handles a search query
 			String query = intent.getStringExtra(SearchManager.QUERY);
-			Log.d(TAG, "ACTION_SEARCH, query" + query);
+			Log.d(TAG, "ACTION_SEARCH, query: " + query);
 			showResults(query);
 		}
 	}
@@ -102,8 +109,8 @@ public class MainActivity extends Activity {
 					ClassicoDatabase.KEY_COMPOSITION };
 
 			// Specify the corresponding layout elements where we want the columns to go
-			int[] to = new int[] { R.id.word,
-					R.id.definition };
+			int[] to = new int[] { R.id.composer,
+					R.id.composition };
 
 			// Create a simple cursor adapter for the definitions and apply them to the ListView
 			SimpleCursorAdapter words = new SimpleCursorAdapter(this,

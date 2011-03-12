@@ -6,7 +6,7 @@
     <string name="search_label">Dictionary</string>
     <string name="search_hint">Search the dictionary</string>
     
-     <string name="settings_description">Definitions of words</string>
+    <string name="settings_description">Composer and their works</string>
     <string name="global">Search nonsense words</string>
     <string name="search_instructions">Press the search key to look up a word</string>
     <string name="search_results">Search results for </string>

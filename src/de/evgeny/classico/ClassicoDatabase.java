@@ -20,7 +20,7 @@ import android.provider.BaseColumns;
 import android.text.TextUtils;
 import android.util.Log;
 
-class ClassicoDatabase {
+public class ClassicoDatabase {
 
 	private final static String TAG = ClassicoDatabase.class.getSimpleName();
 
@@ -29,7 +29,8 @@ class ClassicoDatabase {
 	public static final String KEY_COMPOSITION = SearchManager.SUGGEST_COLUMN_TEXT_2;
 	public static final String KEY_COMPOSITION_ID = "comp_id";
 
-	private static final String DATABASE_NAME = "classico";
+	//private static final String DATABASE_NAME = "classico";
+	private static final String DATABASE_NAME = "/sdcard/classico";
 	private static final String FTS_VIRTUAL_TABLE = "FTSclassico";
 	private static final int DATABASE_VERSION = 2;
 
@@ -39,7 +40,7 @@ class ClassicoDatabase {
 	private static Context sContext;
 	public static Handler sHandler;
 
-	
+
 	public static void init(Context context, Handler handler) {
 		Log.d(TAG, "init() with handler: ");
 		//sDatabaseOpenHelper = new ClassicoOpenHelper(context);
@@ -47,10 +48,14 @@ class ClassicoDatabase {
 		sContext = context;
 		//open db to start load the data
 		//sDatabase = sDatabaseOpenHelper.getReadableDatabase();
-		sDatabase = SQLiteDatabase.openDatabase("/sdcard/classico", null, SQLiteDatabase.OPEN_READONLY);
-		
+		sDatabase = SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
 		//loadClassico();
 	}
+	
+	public static void openReadableDatabase() {
+		sDatabase = SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
+	}
+	
 	/**
 	 * Builds a map for all columns that may be requested, which will be given to the 
 	 * SQLiteQueryBuilder. This is a good way to define aliases for column names, but must include 
@@ -126,11 +131,10 @@ class ClassicoDatabase {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
 		builder.setTables(FTS_VIRTUAL_TABLE);
 		builder.setProjectionMap(mColumnMap);
-		Cursor cursor;
-		synchronized (sDatabase) {			
-			cursor = builder.query(sDatabase,
-					columns, selection, selectionArgs, null, null, null);
-		}
+		//openReadableDatabase();
+		Cursor cursor = builder.query(sDatabase,
+				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " DESC");
+		//sDatabase.close();
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {
@@ -139,8 +143,8 @@ class ClassicoDatabase {
 		}
 		return cursor;
 	}
-	
-	
+
+
 	/**
 	 * Starts a thread to load the database table with words
 	 */
@@ -200,60 +204,60 @@ class ClassicoDatabase {
 		initialValues.put(KEY_COMPOSER, composer);
 		initialValues.put(KEY_COMPOSITION, composition);
 		initialValues.put(KEY_COMPOSITION_ID, comp_id);		
-		synchronized (sDatabase) {						
-			while (sDatabase.isDbLockedByOtherThreads()) {
-				try {
-					Thread.sleep(200);
-				} catch (InterruptedException e) {
-					Log.e(TAG, "Thread error: ", e);
-					e.printStackTrace();
-				}
-			}
-			return sDatabase.insert(FTS_VIRTUAL_TABLE, null, initialValues);
-		}
+
+//		while (sDatabaseOpenHelper.getReadableDatabase().isDbLockedByOtherThreads()) {
+//			try {
+//				Thread.sleep(200);
+//			} catch (InterruptedException e) {
+//				Log.e(TAG, "Thread error: ", e);
+//				e.printStackTrace();
+//			}
+//		}
+//		return sDatabaseOpenHelper.getReadableDatabase().insert(FTS_VIRTUAL_TABLE, null, initialValues);
+		return 0;
 	}
 
 	/**
 	 * This creates/opens the database.
 	 */
-//	private static class ClassicoOpenHelper extends SQLiteOpenHelper {
-//
-//		private final Context mHelperContext;
-//		private static SQLiteDatabase mDatabase;
-//
-//		/* Note that FTS3 does not support column constraints and thus, you cannot
-//		 * declare a primary key. However, "rowid" is automatically used as a unique
-//		 * identifier, so when making requests, we will use "_id" as an alias for "rowid"
-//		 */
-//		private static final String FTS_TABLE_CREATE =
-//			"CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
-//			" USING fts3 (" +
-//			KEY_COMPOSER + ", " +
-//			KEY_COMPOSITION + ", " +
-//			KEY_COMPOSITION_ID + ");";
-//
-//
-//		ClassicoOpenHelper(Context context) {        	
-//			super(context, DATABASE_NAME, null, DATABASE_VERSION);
-//			Log.w(TAG, "classicoOpenHelper");
-//			mHelperContext = context;
-//		}
-//
-//		@Override
-//		public void onCreate(SQLiteDatabase db) {
-//			Log.d(TAG, "onCreate helper");
-//
-//			mDatabase = db;            
-//			mDatabase.execSQL(FTS_TABLE_CREATE);
-//			//loadClassico();
-//		}
-//
-//		@Override
-//		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-//			Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-//					+ newVersion + ", which will destroy all old data");
-//			db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
-//			onCreate(db);
-//		}
-//	}
+	private static class ClassicoOpenHelper extends SQLiteOpenHelper {
+
+		private final Context mHelperContext;
+		private static SQLiteDatabase mDatabase;
+
+		/* Note that FTS3 does not support column constraints and thus, you cannot
+		 * declare a primary key. However, "rowid" is automatically used as a unique
+		 * identifier, so when making requests, we will use "_id" as an alias for "rowid"
+		 */
+		private static final String FTS_TABLE_CREATE =
+			"CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
+			" USING fts3 (" +
+			KEY_COMPOSER + ", " +
+			KEY_COMPOSITION + ", " +
+			KEY_COMPOSITION_ID + ");";
+
+
+		ClassicoOpenHelper(Context context) {        	
+			super(context, DATABASE_NAME, null, DATABASE_VERSION);
+			Log.w(TAG, "classicoOpenHelper");
+			mHelperContext = context;
+		}		
+
+		@Override
+		public void onCreate(SQLiteDatabase db) {
+			Log.d(TAG, "onCreate helper");
+
+			mDatabase = db;            
+			mDatabase.execSQL(FTS_TABLE_CREATE);
+			//loadClassico();
+		}
+
+		@Override
+		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
+					+ newVersion + ", which will destroy all old data");
+			db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
+			onCreate(db);
+		}
+	}
 }
