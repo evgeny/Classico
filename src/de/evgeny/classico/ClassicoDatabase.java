@@ -52,10 +52,6 @@ public class ClassicoDatabase {
 		//loadClassico();
 	}
 	
-	public static void openReadableDatabase() {
-		sDatabase = SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
-	}
-	
 	/**
 	 * Builds a map for all columns that may be requested, which will be given to the 
 	 * SQLiteQueryBuilder. This is a good way to define aliases for column names, but must include 
@@ -131,10 +127,8 @@ public class ClassicoDatabase {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
 		builder.setTables(FTS_VIRTUAL_TABLE);
 		builder.setProjectionMap(mColumnMap);
-		//openReadableDatabase();
 		Cursor cursor = builder.query(sDatabase,
-				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " DESC");
-		//sDatabase.close();
+				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC");
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {
@@ -205,16 +199,7 @@ public class ClassicoDatabase {
 		initialValues.put(KEY_COMPOSITION, composition);
 		initialValues.put(KEY_COMPOSITION_ID, comp_id);		
 
-//		while (sDatabaseOpenHelper.getReadableDatabase().isDbLockedByOtherThreads()) {
-//			try {
-//				Thread.sleep(200);
-//			} catch (InterruptedException e) {
-//				Log.e(TAG, "Thread error: ", e);
-//				e.printStackTrace();
-//			}
-//		}
-//		return sDatabaseOpenHelper.getReadableDatabase().insert(FTS_VIRTUAL_TABLE, null, initialValues);
-		return 0;
+		return sDatabase.insert(FTS_VIRTUAL_TABLE, null, initialValues);
 	}
 
 	/**

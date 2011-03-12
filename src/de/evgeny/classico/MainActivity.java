@@ -9,6 +9,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -19,7 +22,7 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity {
 	private final static String TAG = MainActivity.class.getSimpleName();
-	
+
 	public static final int LOAD_DATA_START = 0;
 	public static final int LOAD_DATA_FINISH = 1;
 
@@ -48,7 +51,7 @@ public class MainActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		Log.d(TAG, "onCreate(): ");
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.main);		
@@ -61,12 +64,12 @@ public class MainActivity extends Activity {
 
 		onNewIntent(getIntent());		
 	}
-	
+
 	@Override
 	protected void onNewIntent(Intent intent) {	
 		super.onNewIntent(intent);
 		Log.d(TAG, "onNewIntent(): ");
-		
+
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
 			// handles a click on a search suggestion; launches activity to show composition
@@ -131,21 +134,28 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	//	@Override
-	//	public boolean onCreateOptionsMenu(Menu menu) {
-	//		MenuInflater inflater = getMenuInflater();
-	//		inflater.inflate(R.menu.options_menu, menu);
-	//		return true;
-	//	}
-	//
-	//	@Override
-	//	public boolean onOptionsItemSelected(MenuItem item) {
-	//		switch (item.getItemId()) {
-	//		case R.id.search:
-	//			onSearchRequested();
-	//			return true;
-	//		default:
-	//			return false;
-	//		}
-	//	}
+	public void onBackPressed() {
+		return;
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.options_menu, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.search:
+			onSearchRequested();
+			return true;
+		case R.id.exit:
+			finish();
+			return true;
+		default:
+			return false;
+		}
+	}
 }
