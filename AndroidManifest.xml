@@ -31,6 +31,9 @@
                 
         <activity android:name=".CompositionActivity"
                   android:theme="@android:style/Theme.NoTitleBar" />
+                  
+                  <activity android:name=".CompositionView"
+                  android:theme="@android:style/Theme.NoTitleBar" />
                         
     </application>
     <uses-sdk android:minSdkVersion="7" />

@@ -73,10 +73,10 @@ public class MainActivity extends Activity {
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
 			// handles a click on a search suggestion; launches activity to show composition
-			Intent wordIntent = new Intent(this, CompositionActivity.class);
+			//Intent wordIntent = new Intent(this, CompositionActivity.class);
+			Intent wordIntent = new Intent(this, CompositionView.class);
 			wordIntent.setData(intent.getData());
 			startActivity(wordIntent);
-			finish();
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
 			String query = intent.getStringExtra(SearchManager.QUERY);
