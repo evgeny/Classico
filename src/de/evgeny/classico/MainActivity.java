@@ -74,7 +74,7 @@ public class MainActivity extends Activity {
 			Log.d(TAG, "ACTION_VIEW");
 			// handles a click on a search suggestion; launches activity to show composition
 			//Intent wordIntent = new Intent(this, CompositionActivity.class);
-			Intent wordIntent = new Intent(this, CompositionView.class);
+			Intent wordIntent = new Intent(this, PartitureViewer.class);
 			wordIntent.setData(intent.getData());
 			startActivity(wordIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {

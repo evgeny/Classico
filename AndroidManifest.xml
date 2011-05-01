@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	  android:installLocation="preferExternal"
       package="de.evgeny.classico"
       android:versionCode="1"
       android:versionName="1.0">
@@ -34,6 +33,9 @@
                   android:theme="@android:style/Theme.NoTitleBar" />
                   
                   <activity android:name=".CompositionView"
+                  android:theme="@android:style/Theme.NoTitleBar" />
+                  
+                  <activity android:name=".PartitureViewer"
                   android:theme="@android:style/Theme.NoTitleBar" />
                         
     </application>

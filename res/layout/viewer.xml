@@ -7,18 +7,7 @@
     	android:id="@+id/image_view"
         android:layout_width="fill_parent" 
         android:layout_height="fill_parent"     
-        android:scaleType="fitCenter" />
-    
-    <TextView
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content" 
-        android:layout_marginBottom="20dip"
-        android:layout_gravity="center_horizontal|bottom"
-        android:padding="12dip"        
-        android:background="#AA000000"
-        android:textColor="#ffffffff"
-        android:text="Golden Gate" />
-    
+        android:scaleType="fitCenter" />    
 	<ImageButton android:id="@+id/next"
             android:background="@android:drawable/ic_media_next"
             android:layout_width="wrap_content"
@@ -39,24 +28,10 @@
             android:layout_alignParentRight="true"
             android:onClick="prev"
             />
-<!--	<ImageButton android:id="@+id/zoomIn"-->
-<!--            android:background="@android:drawable/ic_media_previous"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginLeft="10dip"-->
-<!--            android:layout_gravity="center_vertical|left"-->
-<!--            android:layout_alignParentBottom="true"-->
-<!--            android:layout_alignParentRight="true"-->
-<!--            android:onClick="zoomIn"-->
-<!--            />-->
-<!--	<ImageButton android:id="@+id/zoomOut"-->
-<!--            android:background="@android:drawable/btn_"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginLeft="10dip"-->
-<!--            android:layout_gravity="center_vertical|left"-->
-<!--            android:layout_alignParentBottom="true"-->
-<!--            android:layout_alignParentRight="true"-->
-<!--            android:onClick="zoomOut"-->
-<!--            />-->
+	<ZoomControls android:id="@+id/zoomControls"
+	        android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            />
+	
 </FrameLayout>

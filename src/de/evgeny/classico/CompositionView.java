@@ -37,7 +37,7 @@ public class CompositionView extends Activity {
 	    WebSettings webSettings = mWebView.getSettings();
 	    webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 	    
-	    saveRemoteImageToCache("http://members.home.nl/yourdesktop/highresolution/9.jpg");
+	   // saveRemoteImageToCache("http://members.home.nl/yourdesktop/highresolution/9.jpg");
 	    
 	    //mWebView.loadUrl("http://members.home.nl/yourdesktop/highresolution/9.jpg");
 	    //mWebView.setBackgroundDrawable(Drawable.crea);
@@ -69,31 +69,31 @@ public class CompositionView extends Activity {
 //        return bmp;
 //    }
 	
-	private void saveRemoteImageToCache(String imageUrl) {
-		URL url;
-		try {
-			url = new URL(imageUrl);
-			URLConnection ucon = url.openConnection();
-			InputStream is = ucon.getInputStream();
-			
-			File dir = getExternalCacheDir();
-			File file = new File(dir, "1.jpg");
-			
-			BufferedInputStream bis = new BufferedInputStream(is);
-			FileOutputStream fout = new FileOutputStream(file);
-			
-			int current = 0;
-			while ((current = bis.read()) != -1) {
-				fout.write(current);
-			}
-			bis.close();
-			fout.close();
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}            	
-	}
+//	private void saveRemoteImageToCache(String imageUrl) {
+//		URL url;
+//		try {
+//			url = new URL(imageUrl);
+//			URLConnection ucon = url.openConnection();
+//			InputStream is = ucon.getInputStream();
+//			
+//			File dir = getExternalCacheDir();
+//			File file = new File(dir, "1.jpg");
+//			
+//			BufferedInputStream bis = new BufferedInputStream(is);
+//			FileOutputStream fout = new FileOutputStream(file);
+//			
+//			int current = 0;
+//			while ((current = bis.read()) != -1) {
+//				fout.write(current);
+//			}
+//			bis.close();
+//			fout.close();
+//		} catch (MalformedURLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}            	
+//	}
 }

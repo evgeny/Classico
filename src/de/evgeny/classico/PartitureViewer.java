@@ -17,20 +17,22 @@ import android.graphics.PointF;
 import android.os.Bundle;
 import android.util.FloatMath;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ZoomButtonsController;
-import android.widget.ZoomButtonsController.OnZoomListener;
+import android.widget.ZoomControls;
 
 public class PartitureViewer extends Activity implements OnTouchListener{
 
 	private static final String TAG = PartitureViewer.class.getSimpleName();
-	
+
 	//database parameters
 	private ArrayList<String> mPartiture;
 	private int mPartiturePageNumber;
@@ -40,13 +42,16 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 	private ImageButton mPrev;
 	private Animation mFadeOutAnimation; 
 	private Animation mFadeInAnimation;
-	private ZoomButtonsController mZoomButtonsController;
-	
+	private ZoomControls mZoomControls;
+
 	private Bitmap mOriginBitmap;
 	private float[] mOriginMatrixValues = new float[9];
 	private float[] mCurrentMatrixValues = new float[9];
-	private float mOriginImageWidth; 
-	private float mOriginImageHeight;
+	private float mBitmapWidth; 
+	private float mBitmapHeight;
+	private int mScreenWidth;
+	private int mScreenHeight;
+	private boolean mFirstTouch = true;
 
 	private static final float MIN_ZOOM = 1f;
 	private static final float MAX_ZOOM = 2f;
@@ -73,41 +78,47 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
+
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		Display display = getWindowManager().getDefaultDisplay(); 
+		mScreenWidth = display.getWidth();
+		mScreenHeight = display.getHeight();
+		setContentView(R.layout.viewer);
 
 		mImageView = (ImageView) findViewById(R.id.image_view);
-
 		mPartiture = new ArrayList<String>();
 		fillData();
 		mPartiturePageNumber = 0;
-
-		//matrix = new Matrix(mImageView.getImageMatrix());
-		//savedMatrix = new Matrix(mImageView.getImageMatrix());
-		mImageView.setOnTouchListener(this);
-		//setupZoomButtonController(imageView, this);
-		mZoomButtonsController = new ZoomButtonsController(findViewById(R.id.mainLayout));
-		mZoomButtonsController.setOnZoomListener(new OnZoomListener() {
+		mZoomControls = (ZoomControls) findViewById(R.id.zoomControls);
+		mZoomControls.setOnZoomInClickListener(new OnClickListener() {
 
 			@Override
-			public void onZoom(boolean zoomIn) {
-				if (zoomIn) {
-					Log.d("TAG", "zoom in");
-				} else {
-					Log.d("TAG", "zoom out");
-				}
-			}
-
-			@Override
-			public void onVisibilityChanged(boolean visible) {
-				Log.d("TAG", "onVisibilityChange");
+			public void onClick(View v) {
+				mImageView.setScaleType(ImageView.ScaleType.MATRIX);
+				matrix.set(mImageView.getImageMatrix());
+				matrix.postScale(1.5f, 1.5f);
+				mImageView.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
 			}
 		});
 
+		mZoomControls.setOnZoomOutClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				mImageView.setScaleType(ImageView.ScaleType.MATRIX);
+				matrix.set(mImageView.getImageMatrix());
+				matrix.postScale(0.5f, 0.5f);
+				mImageView.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
+				
+			}
+		});
 		try {
 			loadImage(mPartiture.get(mPartiturePageNumber));
 		} catch (IOException e) {
 			Log.e("TAGGGG", "Errorrr: " + e.getMessage());
 		}
+
+		mImageView.setOnTouchListener(this);
 
 		mNext = (ImageButton) findViewById(R.id.next);
 		mPrev = (ImageButton) findViewById(R.id.prev);
@@ -118,15 +129,21 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		mFadeOutAnimation.setFillAfter(true);
 		mFadeOutAnimation.setFillEnabled(true);
 
-		mNext.startAnimation(mFadeOutAnimation);
+		mNext.startAnimation(mFadeOutAnimation);		
 		mPrev.startAnimation(mFadeOutAnimation);
 	}
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
+		Log.w(TAG, "onTouch(): " + v.toString());
 		ImageView view = (ImageView) v;
 		view.setScaleType(ImageView.ScaleType.MATRIX);
 		float scale;
+
+		if (mFirstTouch) {
+			view.getImageMatrix().getValues(mOriginMatrixValues);
+			mFirstTouch = false;
+		}
 
 		// Dump touch event to LogCat
 		//dumpEvent(event);
@@ -142,7 +159,6 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 			Log.d(TAG, "mode=DRAG" ); //write to LogCat
 			mode = DRAG;
 
-			//mZoomButtonsController.setVisible(true);
 			mNext.startAnimation(mFadeInAnimation);
 			mNext.startAnimation(mFadeOutAnimation);
 			mPrev.startAnimation(mFadeInAnimation);
@@ -151,7 +167,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		case MotionEvent.ACTION_UP: //first finger lifted
 		case MotionEvent.ACTION_POINTER_UP: //second finger lifted
 			mode = NONE;
-			Log.d(TAG, "mode=NONE" );
+			Log.d(TAG, "mode=NONE" );					
 			break;
 
 		case MotionEvent.ACTION_POINTER_DOWN: //first and second finger down
@@ -170,43 +186,24 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 			if (mode == DRAG) { //movement of first finger
 				Log.d(TAG, "mode=DRAG => DRAG");
-				//savedMatrix.set(matrix);
-				//start.set(event.getX(), event.getY());
+
 				matrix.set(savedMatrix);
 				matrix.postTranslate(event.getX() - start.x, event.getY() - start.y); //create the transformation in the matrix of points
-
 			}
 			else if (mode == ZOOM) { //pinch zooming
 				float newDist = spacing(event);
 				Log.d(TAG, "newDist=" + newDist);
 				if (newDist > 5f) {
 					matrix.set(savedMatrix);
+
 					scale = newDist / oldDist; //setting the scaling of the matrix...if scale > 1 means zoom in...if scale < 1 means zoom out
 					matrix.postScale(scale, scale, mid.x, mid.y);
 				}
 			}
-			//float[] values = new float[9];
-			matrix.getValues(mCurrentMatrixValues);
-			if (mCurrentMatrixValues[0] < 0.2f) {
-				break;
-			} 
-			//matrix.
-			Log.w(TAG, mCurrentMatrixValues[0] + " " + mCurrentMatrixValues[1] + " " + mCurrentMatrixValues[2] +
-					mCurrentMatrixValues[3] + " " + mCurrentMatrixValues[4] + " " + mCurrentMatrixValues[5] +
-					mCurrentMatrixValues[6] + " " + mCurrentMatrixValues[7] + " " + mCurrentMatrixValues[8]);
-			
-			int[] location = new int[2];
-			view.getLocationInWindow(location);
-			
-			//Log.w(TAG, view.computeScroll());
 
-			view.setImageMatrix(matrix); // display the transformation on screen
-			view.computeScroll();
+			view.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
 			break;
 		}
-
-		//view.setImageMatrix(matrix); // display the transformation on screen
-
 		return true; // indicate event was handled
 	} 
 
@@ -222,8 +219,52 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		point.set(x / 2, y / 2);
 	}
 
+	private Matrix correctBorder(Matrix matrix) {
+		matrix.getValues(mCurrentMatrixValues);
+
+		//		Log.w(TAG, mCurrentMatrixValues[0] + " " + mCurrentMatrixValues[1] + " " + mCurrentMatrixValues[2] + " " +
+		//				mCurrentMatrixValues[3] + " " + mCurrentMatrixValues[4] + " " + mCurrentMatrixValues[5] + " " +
+		//				mCurrentMatrixValues[6] + " " + mCurrentMatrixValues[7] + " " + mCurrentMatrixValues[8]);
+
+		if (mCurrentMatrixValues[0] < mOriginMatrixValues[0]) {
+			mCurrentMatrixValues[0] = mOriginMatrixValues[0];
+			mCurrentMatrixValues[4] = mOriginMatrixValues[4];
+		} else if (mCurrentMatrixValues[0] > 1.0f) {
+			mCurrentMatrixValues[0] = 1.0f;
+			mCurrentMatrixValues[4] = 1.0f;
+		}
+
+		final float y = (mScreenHeight-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
+		final float x = (mScreenWidth-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
+
+		if (x < 0) {
+			if (mCurrentMatrixValues[2] > 0) {
+				mCurrentMatrixValues[2] = 0;
+			}
+			if (mCurrentMatrixValues[2] < (x*2)) {
+				mCurrentMatrixValues[2] = x*2;
+			}
+		} else {
+			mCurrentMatrixValues[2] = x;
+		}
+
+		if (y < 0) {
+			if (mCurrentMatrixValues[5] > 0) {
+				mCurrentMatrixValues[5] = 0;
+			}
+			if (mCurrentMatrixValues[5] < (y*2)) {
+				mCurrentMatrixValues[5] = y*2;
+			} 
+		} else {
+			mCurrentMatrixValues[5] = y;
+		}
+		matrix.setValues(mCurrentMatrixValues);
+		return matrix;
+	}
+
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
+		if (mPartiturePageNumber > mPartiture.size()) return;
 		mPartiturePageNumber++;
 		try {
 			loadImage(mPartiture.get(mPartiturePageNumber));
@@ -235,6 +276,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
+		if (mPartiturePageNumber == 0) return;
 		mPartiturePageNumber--;
 		try {
 			loadImage(mPartiture.get(mPartiturePageNumber));
@@ -246,6 +288,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 	private void loadImage(String uri) throws IOException {
 		Log.d(TAG, "Load new Image");
+		setProgressBarIndeterminateVisibility(true);
 		URL url = new URL(uri);            
 
 		URLConnection ucon = url.openConnection();
@@ -259,12 +302,13 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		}
 
 		mOriginBitmap = BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
-		mImageView.setImageBitmap(mOriginBitmap);
-		mImageView.getImageMatrix().getValues(mOriginMatrixValues);
+		mBitmapHeight = mOriginBitmap.getHeight();
+		mBitmapWidth = mOriginBitmap.getWidth();
+		mImageView.setImageBitmap(mOriginBitmap);	
+
+		mFirstTouch = true;
 		
-		mOriginImageWidth = mOriginBitmap.getWidth();
-		mOriginImageHeight = mOriginBitmap.getHeight();
-		
+		setProgressBarIndeterminateVisibility(false);
 	}
 
 	private void fillData() {
@@ -278,4 +322,31 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/8.jpg");
 		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/9.jpg");
 	}
+
+	private void dumpEvent(MotionEvent event) {
+		String names[] = { "DOWN" , "UP" , "MOVE" , "CANCEL" , "OUTSIDE" ,
+				"POINTER_DOWN" , "POINTER_UP" , "7?" , "8?" , "9?" };
+		StringBuilder sb = new StringBuilder();
+		int action = event.getAction();
+		int actionCode = action & MotionEvent.ACTION_MASK;
+		sb.append("event ACTION_" ).append(names[actionCode]);
+		if (actionCode == MotionEvent.ACTION_POINTER_DOWN
+				|| actionCode == MotionEvent.ACTION_POINTER_UP) {
+			sb.append("(pid " ).append(
+					action >> MotionEvent.ACTION_POINTER_ID_SHIFT);
+			sb.append(")" );
+		}
+		sb.append("[" );
+		for (int i = 0; i < event.getPointerCount(); i++) {
+			sb.append("#" ).append(i);
+			sb.append("(pid " ).append(event.getPointerId(i));
+			sb.append(")=" ).append((int) event.getX(i));
+			sb.append("," ).append((int) event.getY(i));
+			if (i + 1 < event.getPointerCount())
+				sb.append(";" );
+		}
+		sb.append("]" );
+		Log.d(TAG, sb.toString());
+	}
+
 }
