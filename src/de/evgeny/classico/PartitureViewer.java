@@ -10,10 +10,12 @@ import java.util.ArrayList;
 import org.apache.http.util.ByteArrayBuffer;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.FloatMath;
 import android.util.Log;
@@ -102,21 +104,17 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		});
 
 		mZoomControls.setOnZoomOutClickListener(new OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				mImageView.setScaleType(ImageView.ScaleType.MATRIX);
 				matrix.set(mImageView.getImageMatrix());
 				matrix.postScale(0.5f, 0.5f);
 				mImageView.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
-				
+
 			}
 		});
-		try {
-			loadImage(mPartiture.get(mPartiturePageNumber));
-		} catch (IOException e) {
-			Log.e("TAGGGG", "Errorrr: " + e.getMessage());
-		}
+		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 
 		mImageView.setOnTouchListener(this);
 
@@ -266,49 +264,14 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		Log.d(TAG, "Next pressed");
 		if (mPartiturePageNumber > mPartiture.size()) return;
 		mPartiturePageNumber++;
-		try {
-			loadImage(mPartiture.get(mPartiturePageNumber));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 	}
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
 		if (mPartiturePageNumber == 0) return;
 		mPartiturePageNumber--;
-		try {
-			loadImage(mPartiture.get(mPartiturePageNumber));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	private void loadImage(String uri) throws IOException {
-		Log.d(TAG, "Load new Image");
-		setProgressBarIndeterminateVisibility(true);
-		URL url = new URL(uri);            
-
-		URLConnection ucon = url.openConnection();
-		InputStream is = ucon.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is);
-
-		ByteArrayBuffer baf = new ByteArrayBuffer(50);
-		int current = 0;
-		while ((current = bis.read()) != -1) {
-			baf.append((byte) current);
-		}
-
-		mOriginBitmap = BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
-		mBitmapHeight = mOriginBitmap.getHeight();
-		mBitmapWidth = mOriginBitmap.getWidth();
-		mImageView.setImageBitmap(mOriginBitmap);	
-
-		mFirstTouch = true;
-		
-		setProgressBarIndeterminateVisibility(false);
+		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 	}
 
 	private void fillData() {
@@ -349,4 +312,49 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		Log.d(TAG, sb.toString());
 	}
 
+	private class DownloadPartitureTask extends AsyncTask<String, Void, Bitmap> {
+		private ProgressDialog dialog;
+
+		@Override
+		protected void onPreExecute() {		
+			super.onPreExecute();
+			dialog = ProgressDialog.show(PartitureViewer.this, "", 
+	                "Loading. Please wait...", true);
+		}
+		
+		@Override
+		protected Bitmap doInBackground(String... params) {			
+			Log.d(TAG, "Load new partiture sheet");		
+			try{
+				URL url = new URL(params[0]);            
+
+				URLConnection ucon = url.openConnection();
+				InputStream is = ucon.getInputStream();
+				BufferedInputStream bis = new BufferedInputStream(is);
+
+				ByteArrayBuffer baf = new ByteArrayBuffer(50);
+				int current = 0;
+				while ((current = bis.read()) != -1) {
+					baf.append((byte) current);
+				}			
+				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
+			} catch (IOException e) {
+				Log.e(TAG, "Partiture load failed", e);
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Bitmap result) {
+			super.onPostExecute(result);
+			
+			mOriginBitmap = result;
+			mBitmapHeight = mOriginBitmap.getHeight();
+			mBitmapWidth = mOriginBitmap.getWidth();
+			mImageView.setImageBitmap(mOriginBitmap);	
+
+			mFirstTouch = true;	
+			dialog.dismiss();
+		}		
+	}
 }
