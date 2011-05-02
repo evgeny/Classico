@@ -43,7 +43,6 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 	private ImageButton mNext;
 	private ImageButton mPrev;
 	private Animation mFadeOutAnimation; 
-	private Animation mFadeInAnimation;
 	private ZoomControls mZoomControls;
 
 	private Bitmap mOriginBitmap;
@@ -121,7 +120,6 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		mNext = (ImageButton) findViewById(R.id.next);
 		mPrev = (ImageButton) findViewById(R.id.prev);
 
-		mFadeInAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
 		mFadeOutAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
 
 		mFadeOutAnimation.setFillAfter(true);
@@ -129,11 +127,14 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 		mNext.startAnimation(mFadeOutAnimation);		
 		mPrev.startAnimation(mFadeOutAnimation);
+		mZoomControls.startAnimation(mFadeOutAnimation);
+		
 	}
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		Log.w(TAG, "onTouch(): " + v.toString());
+		
 		ImageView view = (ImageView) v;
 		view.setScaleType(ImageView.ScaleType.MATRIX);
 		float scale;
@@ -143,24 +144,23 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 			mFirstTouch = false;
 		}
 
-		// Dump touch event to LogCat
-		//dumpEvent(event);
-
 		// all touch events are handled through this switch statement
 		switch (event.getAction() & MotionEvent.ACTION_MASK) {
 
 
 		case MotionEvent.ACTION_DOWN: //first finger down only
-			//savedMatrix.set(matrix);
 			savedMatrix.set(view.getImageMatrix());
 			start.set(event.getX(), event.getY());
 			Log.d(TAG, "mode=DRAG" ); //write to LogCat
 			mode = DRAG;
+			
 
-			mNext.startAnimation(mFadeInAnimation);
+			mNext.clearAnimation();		
+			mPrev.clearAnimation();
+			mZoomControls.clearAnimation();
 			mNext.startAnimation(mFadeOutAnimation);
-			mPrev.startAnimation(mFadeInAnimation);
 			mPrev.startAnimation(mFadeOutAnimation);
+			mZoomControls.startAnimation(mFadeOutAnimation);
 			break;
 		case MotionEvent.ACTION_UP: //first finger lifted
 		case MotionEvent.ACTION_POINTER_UP: //second finger lifted
@@ -284,32 +284,6 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/7.jpg");
 		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/8.jpg");
 		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/9.jpg");
-	}
-
-	private void dumpEvent(MotionEvent event) {
-		String names[] = { "DOWN" , "UP" , "MOVE" , "CANCEL" , "OUTSIDE" ,
-				"POINTER_DOWN" , "POINTER_UP" , "7?" , "8?" , "9?" };
-		StringBuilder sb = new StringBuilder();
-		int action = event.getAction();
-		int actionCode = action & MotionEvent.ACTION_MASK;
-		sb.append("event ACTION_" ).append(names[actionCode]);
-		if (actionCode == MotionEvent.ACTION_POINTER_DOWN
-				|| actionCode == MotionEvent.ACTION_POINTER_UP) {
-			sb.append("(pid " ).append(
-					action >> MotionEvent.ACTION_POINTER_ID_SHIFT);
-			sb.append(")" );
-		}
-		sb.append("[" );
-		for (int i = 0; i < event.getPointerCount(); i++) {
-			sb.append("#" ).append(i);
-			sb.append("(pid " ).append(event.getPointerId(i));
-			sb.append(")=" ).append((int) event.getX(i));
-			sb.append("," ).append((int) event.getY(i));
-			if (i + 1 < event.getPointerCount())
-				sb.append(";" );
-		}
-		sb.append("]" );
-		Log.d(TAG, sb.toString());
 	}
 
 	private class DownloadPartitureTask extends AsyncTask<String, Void, Bitmap> {
