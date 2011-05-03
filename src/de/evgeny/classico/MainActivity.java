@@ -66,20 +66,19 @@ public class MainActivity extends Activity {
 	}
 
 	@Override
-	protected void onNewIntent(Intent intent) {	
+	protected void onNewIntent(final Intent intent) {	
 		super.onNewIntent(intent);
 		Log.d(TAG, "onNewIntent(): ");
 
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
-			// handles a click on a search suggestion; launches activity to show composition
-			//Intent wordIntent = new Intent(this, CompositionActivity.class);
-			Intent wordIntent = new Intent(this, PartitureViewer.class);
-			wordIntent.setData(intent.getData());
-			startActivity(wordIntent);
+			// handles a click on a search suggestion; launches activity to show composition			
+			final Intent compositionIntent = new Intent(this, PartitureViewer.class);			
+			compositionIntent.setData(intent.getData());
+			startActivity(compositionIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
-			String query = intent.getStringExtra(SearchManager.QUERY);
+			final String query = intent.getStringExtra(SearchManager.QUERY);
 			Log.d(TAG, "ACTION_SEARCH, query: " + query);
 			showResults(query);
 		}
@@ -124,11 +123,11 @@ public class MainActivity extends Activity {
 			mListView.setOnItemClickListener(new OnItemClickListener() {
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 					// Build the Intent used to open WordActivity with a specific word Uri
-					Intent wordIntent = new Intent(getApplicationContext(), CompositionActivity.class);
+					final Intent compositionIntent = new Intent(getApplicationContext(), PartitureViewer.class);
 					Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
 							String.valueOf(id));
-					wordIntent.setData(data);
-					startActivity(wordIntent);
+					compositionIntent.setData(data);
+					startActivity(compositionIntent);
 				}
 			});
 		}

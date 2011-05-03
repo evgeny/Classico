@@ -25,18 +25,13 @@
             <meta-data android:name="android.app.searchable"
                        android:resource="@xml/searchable" />
         </activity>
+        
+        <activity android:name=".PartitureViewer"
+                  android:theme="@android:style/Theme.NoTitleBar" />
 
-		  <provider android:name=".ComposerProvider"
-                android:authorities="de.evgeny.classico.ComposerProvider"/>
-                
-        <activity android:name=".CompositionActivity"
-                  android:theme="@android:style/Theme.NoTitleBar" />
-                  
-                  <activity android:name=".CompositionView"
-                  android:theme="@android:style/Theme.NoTitleBar" />
-                  
-                  <activity android:name=".PartitureViewer"
-                  android:theme="@android:style/Theme.NoTitleBar" />
+		 <provider android:name=".ComposerProvider"
+                   android:authorities="de.evgeny.classico.ComposerProvider"/>
+                                    
                         
     </application>
     <uses-sdk android:minSdkVersion="7" />

@@ -10,23 +10,23 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
 
-public class ComposerProvider extends ContentProvider{
+public class ComposerProvider extends ContentProvider {
 	private final static String TAG = ComposerProvider.class.getSimpleName();
 
 	public static String AUTHORITY = "de.evgeny.classico.ComposerProvider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/classico");
 
 	// MIME types used for searching words or looking up a single definition
-	public static final String WORDS_MIME_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE +
+	public static final String COMPOSITIONS_MIME_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE +
 	"/vnd.evgeny.classico";
-	public static final String DEFINITION_MIME_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE +
+	public static final String COMPOSITION_MIME_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE +
 	"/vnd.evgeny.classico";
 
 	//private ClassicoDatabase mClassico;
 
 	// UriMatcher stuff
-	private static final int SEARCH_WORDS = 0;
-	private static final int GET_WORD = 1;
+	private static final int SEARCH_COMPOSITIONS = 0;
+	private static final int GET_COMPOSITION = 1;
 	private static final int SEARCH_SUGGEST = 2;
 	private static final int REFRESH_SHORTCUT = 3;
 	private static final UriMatcher sURIMatcher = buildUriMatcher();
@@ -50,8 +50,8 @@ public class ComposerProvider extends ContentProvider{
 	private static UriMatcher buildUriMatcher() {
 		UriMatcher matcher =  new UriMatcher(UriMatcher.NO_MATCH);
 		// to get definitions...
-		matcher.addURI(AUTHORITY, "classico", SEARCH_WORDS);
-		matcher.addURI(AUTHORITY, "classico/#", GET_WORD);
+		matcher.addURI(AUTHORITY, "classico", SEARCH_COMPOSITIONS);
+		matcher.addURI(AUTHORITY, "classico/#", GET_COMPOSITION);
 		// to get suggestions...
 		matcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY, SEARCH_SUGGEST);
 		matcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY + "/*", SEARCH_SUGGEST);
@@ -68,10 +68,10 @@ public class ComposerProvider extends ContentProvider{
     @Override
     public String getType(Uri uri) {
         switch (sURIMatcher.match(uri)) {
-            case SEARCH_WORDS:
-                return WORDS_MIME_TYPE;
-            case GET_WORD:
-                return DEFINITION_MIME_TYPE;
+            case SEARCH_COMPOSITIONS:
+                return COMPOSITIONS_MIME_TYPE;
+            case GET_COMPOSITION:
+                return COMPOSITION_MIME_TYPE;
             case SEARCH_SUGGEST:
                 return SearchManager.SUGGEST_MIME_TYPE;
             case REFRESH_SHORTCUT:
@@ -105,13 +105,13 @@ public class ComposerProvider extends ContentProvider{
 						"selectionArgs must be provided for the Uri: " + uri);
 			}
 			return getSuggestions(selectionArgs[0]);
-		case SEARCH_WORDS:
+		case SEARCH_COMPOSITIONS:
 			if (selectionArgs == null) {
 				throw new IllegalArgumentException(
 						"selectionArgs must be provided for the Uri: " + uri);
 			}
 			return search(selectionArgs[0]);
-		case GET_WORD:
+		case GET_COMPOSITION:
 			return getComposition(uri);
 		default:
 			throw new IllegalArgumentException("Unknown Uri: " + uri);

@@ -127,7 +127,7 @@ public class ClassicoDatabase {
 		builder.setTables(FTS_VIRTUAL_TABLE);
 		builder.setProjectionMap(mColumnMap);
 		Cursor cursor = builder.query(sDatabase,
-				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC");
+				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {
