@@ -9,7 +9,7 @@
         android:layout_height="fill_parent"     
         android:scaleType="fitCenter" />    
 	<ImageButton android:id="@+id/next"
-            android:background="@android:drawable/ic_media_next"
+            android:background="@drawable/arrow_right"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="10dip"
@@ -19,7 +19,7 @@
             android:onClick="next"
             />
 	<ImageButton android:id="@+id/prev"
-            android:background="@android:drawable/ic_media_previous"
+            android:background="@drawable/arrow_left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dip"

@@ -42,7 +42,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 	//navigation
 	private ImageButton mNext;
 	private ImageButton mPrev;
-	private Animation mFadeOutAnimation; 
+	private Animation mFadeOutAnimation;
 	private ZoomControls mZoomControls;
 
 	private Bitmap mOriginBitmap;
@@ -120,7 +120,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		mNext = (ImageButton) findViewById(R.id.next);
 		mPrev = (ImageButton) findViewById(R.id.prev);
 
-		mFadeOutAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+		mFadeOutAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_out);		
 
 		mFadeOutAnimation.setFillAfter(true);
 		mFadeOutAnimation.setFillEnabled(true);
