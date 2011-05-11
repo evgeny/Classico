@@ -1,11 +1,14 @@
 package de.evgeny.classico;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.http.util.ByteArrayBuffer;
 
@@ -17,16 +20,17 @@ import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.FloatMath;
 import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.Window;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
+import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ZoomControls;
@@ -50,9 +54,12 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 	private float[] mCurrentMatrixValues = new float[9];
 	private float mBitmapWidth; 
 	private float mBitmapHeight;
-	private int mScreenWidth;
-	private int mScreenHeight;
+
+	private FrameLayout mFrameLayout;
 	private boolean mFirstTouch = true;
+
+	private final HashMap<String, SoftReference<Bitmap>> cache = new HashMap<String,  SoftReference<Bitmap>>();
+	private File cacheDir;
 
 	private static final float MIN_ZOOM = 1f;
 	private static final float MAX_ZOOM = 2f;
@@ -81,11 +88,10 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		super.onCreate(savedInstanceState);
 
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		Display display = getWindowManager().getDefaultDisplay(); 
-		mScreenWidth = display.getWidth();
-		mScreenHeight = display.getHeight();
 		setContentView(R.layout.viewer);
 
+		mFrameLayout = (FrameLayout) findViewById(R.id.mainLayout);
+		
 		mImageView = (ImageView) findViewById(R.id.image_view);
 		mPartiture = new ArrayList<String>();
 		fillData();
@@ -125,16 +131,36 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		mFadeOutAnimation.setFillAfter(true);
 		mFadeOutAnimation.setFillEnabled(true);
 
-		mNext.startAnimation(mFadeOutAnimation);		
-		mPrev.startAnimation(mFadeOutAnimation);
-		mZoomControls.startAnimation(mFadeOutAnimation);
-		
+//		mNext.startAnimation(mFadeOutAnimation);		
+//		mPrev.startAnimation(mFadeOutAnimation);
+//		mZoomControls.startAnimation(mFadeOutAnimation);
+		controllNavigationAnimation();
+
+	}
+	
+	private void controllNavigationAnimation() {		
+		mZoomControls.clearAnimation();
+		if (mPartiturePageNumber == 0) {
+			mNext.clearAnimation();					
+			mNext.startAnimation(mFadeOutAnimation);
+			mPrev.startAnimation(mFadeOutAnimation);
+		} else if (mPartiturePageNumber == (mPartiture.size() - 1)) {
+			mPrev.clearAnimation();
+			mPrev.startAnimation(mFadeOutAnimation);
+			mNext.startAnimation(mFadeOutAnimation);
+		} else {
+			mNext.clearAnimation();		
+			mPrev.clearAnimation();
+			mNext.startAnimation(mFadeOutAnimation);
+			mPrev.startAnimation(mFadeOutAnimation);
+		}
+		mZoomControls.startAnimation(mFadeOutAnimation);		
 	}
 
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		Log.w(TAG, "onTouch(): " + v.toString());
-		
+
 		ImageView view = (ImageView) v;
 		view.setScaleType(ImageView.ScaleType.MATRIX);
 		float scale;
@@ -153,14 +179,14 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 			start.set(event.getX(), event.getY());
 			Log.d(TAG, "mode=DRAG" ); //write to LogCat
 			mode = DRAG;
-			
 
-			mNext.clearAnimation();		
-			mPrev.clearAnimation();
-			mZoomControls.clearAnimation();
-			mNext.startAnimation(mFadeOutAnimation);
-			mPrev.startAnimation(mFadeOutAnimation);
-			mZoomControls.startAnimation(mFadeOutAnimation);
+			controllNavigationAnimation();
+//			mNext.clearAnimation();		
+//			mPrev.clearAnimation();
+//			mZoomControls.clearAnimation();
+//			mNext.startAnimation(mFadeOutAnimation);
+//			mPrev.startAnimation(mFadeOutAnimation);
+//			mZoomControls.startAnimation(mFadeOutAnimation);
 			break;
 		case MotionEvent.ACTION_UP: //first finger lifted
 		case MotionEvent.ACTION_POINTER_UP: //second finger lifted
@@ -217,6 +243,12 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		point.set(x / 2, y / 2);
 	}
 
+	/**
+	 * don't let the image scroll over visibly range
+	 * 
+	 * @param matrix
+	 * @return
+	 */
 	private Matrix correctBorder(Matrix matrix) {
 		matrix.getValues(mCurrentMatrixValues);
 
@@ -231,9 +263,9 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 			mCurrentMatrixValues[0] = 1.0f;
 			mCurrentMatrixValues[4] = 1.0f;
 		}
-
-		final float y = (mScreenHeight-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
-		final float x = (mScreenWidth-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
+		
+		final float y = (mFrameLayout.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
+		final float x = (mFrameLayout.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
 
 		if (x < 0) {
 			if (mCurrentMatrixValues[2] > 0) {
@@ -293,14 +325,27 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		protected void onPreExecute() {		
 			super.onPreExecute();
 			dialog = ProgressDialog.show(PartitureViewer.this, "", 
-	                "Loading. Please wait...", true);
+					"Loading. Please wait...", true);
 		}
-		
+
 		@Override
 		protected Bitmap doInBackground(String... params) {			
 			Log.d(TAG, "Load new partiture sheet");		
+
+			//Find the dir to save cached images
+			cacheDir=new File(Environment.getExternalStorageDirectory(),"Partitures");			
+			if(!cacheDir.exists()) {
+				cacheDir.mkdirs();
+			}
+
 			try{
-				URL url = new URL(params[0]);            
+				URL url = new URL(params[0]);
+				
+//				if (cache.containsKey(url.toString())) {
+//					final File file = new File(dir, cache.get);
+//					BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
+//					loadPageFromCache(url);
+//				}
 
 				URLConnection ucon = url.openConnection();
 				InputStream is = ucon.getInputStream();
@@ -321,7 +366,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			super.onPostExecute(result);
-			
+
 			mOriginBitmap = result;
 			mBitmapHeight = mOriginBitmap.getHeight();
 			mBitmapWidth = mOriginBitmap.getWidth();

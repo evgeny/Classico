@@ -13,7 +13,7 @@ import android.util.Log;
 public class ComposerProvider extends ContentProvider {
 	private final static String TAG = ComposerProvider.class.getSimpleName();
 
-	public static String AUTHORITY = "de.evgeny.classico.ComposerProvider";
+	public static String AUTHORITY = "de.evgeny.classico.composerprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/classico");
 
 	// MIME types used for searching words or looking up a single definition

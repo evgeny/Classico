@@ -132,10 +132,6 @@ public class MainActivity extends Activity {
 			});
 		}
 	}
-
-	public void onBackPressed() {
-		return;
-	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="hello">Hello World, MainActivity!</string>
+<resources>    
     <string name="app_name">Classico</string>
     
-    <string name="search_label">Dictionary</string>
-    <string name="search_hint">Search the dictionary</string>
+    <string name="search_label">Classico</string>
+    <string name="search_hint">Search the compositions</string>
     
     <string name="settings_description">Composer and their works</string>
     <string name="global">Search nonsense words</string>
