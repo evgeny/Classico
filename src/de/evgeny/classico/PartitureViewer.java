@@ -29,13 +29,14 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.Window;
 import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ZoomControls;
 
-public class PartitureViewer extends Activity implements OnTouchListener{
+public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
 
 	private static final String TAG = PartitureViewer.class.getSimpleName();
 
@@ -130,6 +131,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 		mFadeOutAnimation.setFillAfter(true);
 		mFadeOutAnimation.setFillEnabled(true);
+		mFadeOutAnimation.setAnimationListener(this);
 
 //		mNext.startAnimation(mFadeOutAnimation);		
 //		mPrev.startAnimation(mFadeOutAnimation);
@@ -138,7 +140,8 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 	}
 	
-	private void controllNavigationAnimation() {		
+	private void controllNavigationAnimation() {	
+		Log.d(TAG, "controllNavigationAnimation");
 		mZoomControls.clearAnimation();
 		if (mPartiturePageNumber == 0) {
 			mNext.clearAnimation();					
@@ -180,7 +183,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 			Log.d(TAG, "mode=DRAG" ); //write to LogCat
 			mode = DRAG;
 
-			controllNavigationAnimation();
+			
 //			mNext.clearAnimation();		
 //			mPrev.clearAnimation();
 //			mZoomControls.clearAnimation();
@@ -191,7 +194,8 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 		case MotionEvent.ACTION_UP: //first finger lifted
 		case MotionEvent.ACTION_POINTER_UP: //second finger lifted
 			mode = NONE;
-			Log.d(TAG, "mode=NONE" );					
+			Log.d(TAG, "mode=NONE" );
+			controllNavigationAnimation();
 			break;
 
 		case MotionEvent.ACTION_POINTER_DOWN: //first and second finger down
@@ -294,6 +298,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
+		if (View.VISIBLE != v.getVisibility()) return;
 		if (mPartiturePageNumber > mPartiture.size()) return;
 		mPartiturePageNumber++;
 		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
@@ -301,6 +306,7 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
+		if (View.VISIBLE != mPrev.getVisibility()) return;
 		if (mPartiturePageNumber == 0) return;
 		mPartiturePageNumber--;
 		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
@@ -375,5 +381,25 @@ public class PartitureViewer extends Activity implements OnTouchListener{
 			mFirstTouch = true;	
 			dialog.dismiss();
 		}		
+	}
+
+	@Override
+	public void onAnimationEnd(Animation animation) {
+		mNext.setVisibility(View.GONE);
+		mPrev.setVisibility(View.GONE);
+		
+	}
+
+	@Override
+	public void onAnimationRepeat(Animation animation) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onAnimationStart(Animation animation) {
+		mNext.setVisibility(View.VISIBLE);
+		mPrev.setVisibility(View.VISIBLE);
+		
 	}
 }
