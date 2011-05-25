@@ -34,6 +34,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.ZoomControls;
 
 public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
@@ -115,7 +116,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			public void onClick(View v) {
 				mImageView.setScaleType(ImageView.ScaleType.MATRIX);
 				matrix.set(mImageView.getImageMatrix());
-				matrix.postScale(0.5f, 0.5f);
+				matrix.postScale(0.5f, 0.5f);				
 				mImageView.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
 
 			}
@@ -336,7 +337,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 		@Override
 		protected Bitmap doInBackground(String... params) {			
-			Log.d(TAG, "Load new partiture sheet");		
+			Log.d(TAG, "Load new partiture page");		
 
 			//Find the dir to save cached images
 			cacheDir=new File(Environment.getExternalStorageDirectory(),"Partitures");			
@@ -361,7 +362,9 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				int current = 0;
 				while ((current = bis.read()) != -1) {
 					baf.append((byte) current);
-				}			
+				}					
+				
+				bis.close();				
 				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
 			} catch (IOException e) {
 				Log.e(TAG, "Partiture load failed", e);
@@ -372,11 +375,14 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			super.onPostExecute(result);
-
+			if (mOriginBitmap != null) {
+				mOriginBitmap.recycle();
+			}
 			mOriginBitmap = result;
 			mBitmapHeight = mOriginBitmap.getHeight();
 			mBitmapWidth = mOriginBitmap.getWidth();
 			mImageView.setImageBitmap(mOriginBitmap);	
+			mImageView.setScaleType(ScaleType.FIT_CENTER);
 
 			mFirstTouch = true;	
 			dialog.dismiss();

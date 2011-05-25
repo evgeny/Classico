@@ -15,10 +15,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity {
 	private final static String TAG = MainActivity.class.getSimpleName();
@@ -54,11 +54,11 @@ public class MainActivity extends Activity {
 
 		Log.d(TAG, "onCreate(): ");
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		setContentView(R.layout.main);		
+		setContentView(R.layout.main);	
 		//test
 		//ClassicoDatabase db = new ClassicoDatabase(this, mHandler);
 		ClassicoDatabase.init(this, mHandler);
-		//end test
+		//end test		
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list);
 
@@ -68,7 +68,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onNewIntent(final Intent intent) {	
 		super.onNewIntent(intent);
-		Log.d(TAG, "onNewIntent(): ");
+		Log.d(TAG, "onNewIntent(): " + intent.getAction());
 
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
@@ -82,6 +82,10 @@ public class MainActivity extends Activity {
 			Log.d(TAG, "ACTION_SEARCH, query: " + query);
 			showResults(query);
 		}
+	}
+	
+	public void onSearchButtonClick(final View view) {
+		onSearchRequested();
 	}
 
 	/**

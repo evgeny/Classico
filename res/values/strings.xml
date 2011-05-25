@@ -7,7 +7,9 @@
     
     <string name="settings_description">Composer and their works</string>
     <string name="global">Search nonsense words</string>
-    <string name="search_instructions">Press the search key to look up a word</string>
+    <string name="search_instructions">This applicaton is offline version of Petrucci Music Library.
+    Now in our database over 30000 Partitured. 
+    Press the search key to look up a word</string>
     <string name="search_results">Search results for </string>
     
 	<string name="no_results">No results found for \"%s\"</string>
