@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+>
+<!--     android:background="@drawable/search_plate" -->
+       
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="53dip"        
+        android:orientation="horizontal"
+        android:background="@android:drawable/title_bar"			
+        >
+        
+        <ImageView
+        	android:id="@+id/app_icon"
+    		android:layout_width="wrap_content"
+        	android:layout_height="fill_parent"        	
+        	android:adjustViewBounds="true"        	        	
+        	android:src="@drawable/imslp"        	
+    	/>
+    	<TextView    		
+	        android:layout_width="wrap_content"
+	        android:layout_height="fill_parent"
+	        android:layout_toRightOf="@id/app_icon"
+	        android:paddingLeft="10sp"		        
+	        android:textStyle="bold"	       
+			android:textSize="20sp"	        
+	        android:gravity="center" 	        		       
+	        android:text="@string/app_name"
+	         />
+		<ImageButton
+			android:id="@+id/button_search"
+            android:layout_alignParentRight="true"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:src="@drawable/search"
+            android:background="@android:color/transparent"
+            android:onClick="onSearchButtonClick"
+            />        
+
+    </RelativeLayout>
+
+</LinearLayout>
