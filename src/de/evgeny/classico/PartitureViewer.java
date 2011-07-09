@@ -21,6 +21,7 @@ import android.graphics.PointF;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.TextUtils;
 import android.util.FloatMath;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -35,6 +36,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.widget.Toast;
 import android.widget.ZoomControls;
 
 public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
@@ -44,6 +46,8 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	//database parameters
 	private ArrayList<String> mPartiture;
 	private int mPartiturePageNumber;
+	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
+	private String mImslp;
 
 	//navigation
 	private ImageButton mNext;
@@ -89,15 +93,17 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		final Bundle extras = getIntent().getExtras();
+		mImslp = extras.getString("imslp");
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.viewer);
 
 		mFrameLayout = (FrameLayout) findViewById(R.id.mainLayout);
-		
+
 		mImageView = (ImageView) findViewById(R.id.image_view);
 		mPartiture = new ArrayList<String>();
-		fillData();
-		mPartiturePageNumber = 0;
+		//fillData();
+		mPartiturePageNumber = 1;
 		mZoomControls = (ZoomControls) findViewById(R.id.zoomControls);
 		mZoomControls.setOnZoomInClickListener(new OnClickListener() {
 
@@ -121,7 +127,9 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 			}
 		});
-		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
+
+		new DownloadPartitureTask().execute(getLink());
+		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 
 		mImageView.setOnTouchListener(this);
 
@@ -134,13 +142,13 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		mFadeOutAnimation.setFillEnabled(true);
 		mFadeOutAnimation.setAnimationListener(this);
 
-//		mNext.startAnimation(mFadeOutAnimation);		
-//		mPrev.startAnimation(mFadeOutAnimation);
-//		mZoomControls.startAnimation(mFadeOutAnimation);
+		//		mNext.startAnimation(mFadeOutAnimation);		
+		//		mPrev.startAnimation(mFadeOutAnimation);
+		//		mZoomControls.startAnimation(mFadeOutAnimation);
 		controllNavigationAnimation();
 
 	}
-	
+
 	private void controllNavigationAnimation() {	
 		Log.d(TAG, "controllNavigationAnimation");
 		mZoomControls.clearAnimation();
@@ -184,13 +192,13 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			Log.d(TAG, "mode=DRAG" ); //write to LogCat
 			mode = DRAG;
 
-			
-//			mNext.clearAnimation();		
-//			mPrev.clearAnimation();
-//			mZoomControls.clearAnimation();
-//			mNext.startAnimation(mFadeOutAnimation);
-//			mPrev.startAnimation(mFadeOutAnimation);
-//			mZoomControls.startAnimation(mFadeOutAnimation);
+
+			//			mNext.clearAnimation();		
+			//			mPrev.clearAnimation();
+			//			mZoomControls.clearAnimation();
+			//			mNext.startAnimation(mFadeOutAnimation);
+			//			mPrev.startAnimation(mFadeOutAnimation);
+			//			mZoomControls.startAnimation(mFadeOutAnimation);
 			break;
 		case MotionEvent.ACTION_UP: //first finger lifted
 		case MotionEvent.ACTION_POINTER_UP: //second finger lifted
@@ -268,7 +276,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			mCurrentMatrixValues[0] = 1.0f;
 			mCurrentMatrixValues[4] = 1.0f;
 		}
-		
+
 		final float y = (mFrameLayout.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
 		final float x = (mFrameLayout.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
 
@@ -299,31 +307,33 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
-		if (View.VISIBLE != v.getVisibility()) return;
-		if (mPartiturePageNumber > mPartiture.size()) return;
+		//if (View.VISIBLE != v.getVisibility()) return;
+		//if (mPartiturePageNumber > mPartiture.size()) return;
 		mPartiturePageNumber++;
-		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
+		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
+		new DownloadPartitureTask().execute(getLink());
 	}
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
-		if (View.VISIBLE != mPrev.getVisibility()) return;
-		if (mPartiturePageNumber == 0) return;
+		//if (View.VISIBLE != mPrev.getVisibility()) return;
+		//if (mPartiturePageNumber == 0) return;
 		mPartiturePageNumber--;
-		new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
+		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
+		new DownloadPartitureTask().execute(getLink());
 	}
 
-	private void fillData() {
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/1.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/2.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/3.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/4.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/5.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/6.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/7.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/8.jpg");
-		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/9.jpg");
-	}
+	//	private void fillData() {
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/1.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/2.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/3.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/4.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/5.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/6.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/7.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/8.jpg");
+	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/9.jpg");
+	//	}
 
 	private class DownloadPartitureTask extends AsyncTask<String, Void, Bitmap> {
 		private ProgressDialog dialog;
@@ -340,19 +350,19 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			Log.d(TAG, "Load new partiture page");		
 
 			//Find the dir to save cached images
-			cacheDir=new File(Environment.getExternalStorageDirectory(),"Partitures");			
+			cacheDir = new File(Environment.getExternalStorageDirectory(),"Partitures");			
 			if(!cacheDir.exists()) {
 				cacheDir.mkdirs();
 			}
 
 			try{
 				URL url = new URL(params[0]);
-				
-//				if (cache.containsKey(url.toString())) {
-//					final File file = new File(dir, cache.get);
-//					BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
-//					loadPageFromCache(url);
-//				}
+
+				//				if (cache.containsKey(url.toString())) {
+				//					final File file = new File(dir, cache.get);
+				//					BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
+				//					loadPageFromCache(url);
+				//				}
 
 				URLConnection ucon = url.openConnection();
 				InputStream is = ucon.getInputStream();
@@ -363,11 +373,15 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				while ((current = bis.read()) != -1) {
 					baf.append((byte) current);
 				}					
-				
-				bis.close();				
+
+				bis.close();
+				if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
+					return null;
+				}				
 				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
 			} catch (IOException e) {
 				Log.e(TAG, "Partiture load failed", e);
+				finish();
 			}
 			return null;
 		}
@@ -375,16 +389,20 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			super.onPostExecute(result);
-			if (mOriginBitmap != null) {
-				mOriginBitmap.recycle();
-			}
-			mOriginBitmap = result;
-			mBitmapHeight = mOriginBitmap.getHeight();
-			mBitmapWidth = mOriginBitmap.getWidth();
-			mImageView.setImageBitmap(mOriginBitmap);	
-			mImageView.setScaleType(ScaleType.FIT_CENTER);
+			if(result != null) {
+				if (mOriginBitmap != null) {
+					mOriginBitmap.recycle();
+				}
+				mOriginBitmap = result;
+				mBitmapHeight = mOriginBitmap.getHeight();
+				mBitmapWidth = mOriginBitmap.getWidth();
+				mImageView.setImageBitmap(mOriginBitmap);	
+				mImageView.setScaleType(ScaleType.FIT_CENTER);
 
-			mFirstTouch = true;	
+				mFirstTouch = true;					
+			} else {
+				Toast.makeText(getApplicationContext(), "Score wasn't found", Toast.LENGTH_LONG).show();
+			}
 			dialog.dismiss();
 		}		
 	}
@@ -392,20 +410,24 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	@Override
 	public void onAnimationEnd(Animation animation) {
 		mNext.setVisibility(View.GONE);
-		mPrev.setVisibility(View.GONE);
-		
+		mPrev.setVisibility(View.GONE);		
 	}
 
 	@Override
 	public void onAnimationRepeat(Animation animation) {
-		// TODO Auto-generated method stub
-		
+		// TODO Auto-generated method stub		
 	}
 
 	@Override
 	public void onAnimationStart(Animation animation) {
 		mNext.setVisibility(View.VISIBLE);
 		mPrev.setVisibility(View.VISIBLE);
-		
+
+	}
+
+	private String getLink() {
+		final String url = WEB_SERVER + mImslp + "&page=" + mPartiturePageNumber; 
+		Log.d(TAG, "load image from url: " + url);
+		return url;
 	}
 }

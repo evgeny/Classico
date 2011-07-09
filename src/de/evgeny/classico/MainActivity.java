@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.main);	
 		//test
 		//ClassicoDatabase db = new ClassicoDatabase(this, mHandler);
-		ClassicoDatabase.init(this, mHandler);
+		ClassicoDatabase.init(getApplicationContext(), mHandler);
 		//end test		
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list);
@@ -73,9 +73,9 @@ public class MainActivity extends Activity {
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
 			// handles a click on a search suggestion; launches activity to show composition			
-			final Intent compositionIntent = new Intent(this, PartitureViewer.class);			
-			compositionIntent.setData(intent.getData());
-			startActivity(compositionIntent);
+			final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
+			scoreIntent.setData(intent.getData());
+			startActivity(scoreIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
 			final String query = intent.getStringExtra(SearchManager.QUERY);
@@ -126,12 +126,12 @@ public class MainActivity extends Activity {
 			// Define the on-click listener for the list items
 			mListView.setOnItemClickListener(new OnItemClickListener() {
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-					// Build the Intent used to open WordActivity with a specific word Uri
-					final Intent compositionIntent = new Intent(getApplicationContext(), PartitureViewer.class);
+					// Build the Intent used to open WordActivity with a specific word Uri					
+					final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);	
 					Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
 							String.valueOf(id));
-					compositionIntent.setData(data);
-					startActivity(compositionIntent);
+					scoreIntent.setData(data);
+					startActivity(scoreIntent);
 				}
 			});
 		}

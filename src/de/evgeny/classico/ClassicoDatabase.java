@@ -29,13 +29,14 @@ public class ClassicoDatabase {
 	public static final String KEY_COMPOSITION_ID = "comp_id";
 
 	//private static final String DATABASE_NAME = "classico";
-	private static final String DATABASE_NAME = "/sdcard/classico";
+	public static final String DATABASE_NAME = "/sdcard/classico.db";
 	private static final String FTS_VIRTUAL_TABLE = "FTSclassico";
+	public static final String SCORE_TABLE = "scores";
 	private static final int DATABASE_VERSION = 2;
 
 	//private static ClassicoOpenHelper sDatabaseOpenHelper;
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
-	private static SQLiteDatabase sDatabase;
+	public static SQLiteDatabase sDatabase;
 	private static Context sContext;
 	public static Handler sHandler;
 
@@ -127,7 +128,8 @@ public class ClassicoDatabase {
 		builder.setTables(FTS_VIRTUAL_TABLE);
 		builder.setProjectionMap(mColumnMap);
 		Cursor cursor = builder.query(sDatabase,
-				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");
+				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID);
+				//columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");				
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {
