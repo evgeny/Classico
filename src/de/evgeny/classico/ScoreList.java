@@ -17,6 +17,8 @@ public class ScoreList extends Activity {
 	private final static String TAG = ScoreList.class.getSimpleName();
 	private ListView mListView;
 	private int mCompositionId;
+	private Cursor imslpCursor;
+	private ClassicoDatabase mClassicoDatabase;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -44,9 +46,10 @@ public class ScoreList extends Activity {
 		final String selection = "comp_id=?";
 		final String[] selectionArgs = new String[]{String.valueOf(mCompositionId)};
 		
-		final Cursor imslpCursor = ClassicoDatabase.sDatabase.query(
-				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs, null, null, null);
-		
+		mClassicoDatabase = new ClassicoDatabase();
+		Log.d(TAG, "get imslp cursor");
+		imslpCursor = mClassicoDatabase.getCursor(
+				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs);
 		String[] from = new String[] { "imslp", "meta" };
 
 		int[] to = new int[] { R.id.composer,
@@ -55,6 +58,7 @@ public class ScoreList extends Activity {
 		// Create a simple cursor adapter for the definitions and apply them to the ListView
 		SimpleCursorAdapter scores = new SimpleCursorAdapter(this,
 				R.layout.result, imslpCursor, from, to);
+		Log.d(TAG, "set imslp adapter");
 		mListView.setAdapter(scores);
 
 		// Define the on-click listener for the list items
@@ -66,5 +70,12 @@ public class ScoreList extends Activity {
 				startActivity(partitureViewerIntent);
 			}
 		});
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		imslpCursor.close();
+		mClassicoDatabase.close();
 	}
 }

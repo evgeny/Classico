@@ -22,7 +22,7 @@ public class ComposerProvider extends ContentProvider {
 	public static final String COMPOSITION_MIME_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE +
 	"/vnd.evgeny.classico";
 
-	//private ClassicoDatabase mClassico;
+	private ClassicoDatabase mClassicoDatabase;
 
 	// UriMatcher stuff
 	private static final int SEARCH_COMPOSITIONS = 0;
@@ -38,7 +38,7 @@ public class ComposerProvider extends ContentProvider {
 	 * on additional columns that are supported.
 	 */
 	private static final String[] COLUMNS = {
-		"_id",  // must include this column
+		BaseColumns._ID,  // must include this column
 		SearchManager.SUGGEST_COLUMN_TEXT_1,
 		SearchManager.SUGGEST_COLUMN_TEXT_2,
 		SearchManager.SUGGEST_COLUMN_INTENT_DATA,
@@ -90,7 +90,8 @@ public class ComposerProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		Log.w(TAG, "onCreate" );
-		//mClassico = new ClassicoDatabase(getContext());
+		
+		mClassicoDatabase = new ClassicoDatabase();
 		return true;
 	}
 
@@ -127,7 +128,7 @@ public class ComposerProvider extends ContentProvider {
 				SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID};
 
 		//return mClassico.getComposerMatches(query, columns);
-		return ClassicoDatabase.getComposerMatches(query, columns);
+		return mClassicoDatabase.getComposerMatches(query, columns);
 	}
 
 	private Cursor search(String query) {
@@ -138,7 +139,7 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION};
 
 		//return mClassico.getComposerMatches(query, columns);
-		return ClassicoDatabase.getComposerMatches(query, columns);
+		return mClassicoDatabase.getComposerMatches(query, columns);
 	}
 
 	private Cursor getComposition(Uri uri) {
@@ -149,7 +150,7 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 
 		//return mClassico.getComposer(rowId, columns);
-		return ClassicoDatabase.getComposer(rowId, columns);
+		return mClassicoDatabase.getComposer(rowId, columns);
 	}
 
 	@Override
@@ -158,5 +159,6 @@ public class ComposerProvider extends ContentProvider {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+	
 
 }

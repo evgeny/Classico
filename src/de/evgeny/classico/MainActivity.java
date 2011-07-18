@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -29,25 +27,6 @@ public class MainActivity extends Activity {
 	private TextView mTextView;
 	private ListView mListView;
 
-	private final Handler mHandler = new Handler() {
-
-		public void handleMessage(Message msg) {
-			Log.d(TAG, "handleMessage(): ");	
-			switch (msg.what) {
-			case LOAD_DATA_START:
-				setProgressBarIndeterminateVisibility(true);
-				setTitle("load data...");
-				break;
-			case LOAD_DATA_FINISH:
-				setProgressBarIndeterminateVisibility(false);
-				setTitle(R.string.app_name);
-				break;
-			default:
-				break;
-			}			
-		};
-	};
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -55,18 +34,15 @@ public class MainActivity extends Activity {
 		Log.d(TAG, "onCreate(): ");
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.main);	
-		//test
-		//ClassicoDatabase db = new ClassicoDatabase(this, mHandler);
-		ClassicoDatabase.init(getApplicationContext(), mHandler);
-		//end test		
+		
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list);
 
 		onNewIntent(getIntent());		
 	}
-
+	
 	@Override
-	protected void onNewIntent(final Intent intent) {	
+	protected void onNewIntent(final Intent intent) {
 		super.onNewIntent(intent);
 		Log.d(TAG, "onNewIntent(): " + intent.getAction());
 
@@ -108,9 +84,6 @@ public class MainActivity extends Activity {
 			mTextView.setText(countString);
 
 			// Specify the columns we want to display in the result
-			//			String[] from = new String[] { ClassicoDatabase.KEY_COMPOSER,
-			//					ClassicoDatabase.KEY_DATE };
-
 			String[] from = new String[] { ClassicoDatabase.KEY_COMPOSER,
 					ClassicoDatabase.KEY_COMPOSITION };
 

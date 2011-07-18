@@ -2,6 +2,9 @@ package de.evgeny.classico;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
@@ -15,6 +18,7 @@ import org.apache.http.util.ByteArrayBuffer;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
@@ -24,6 +28,7 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.FloatMath;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -64,8 +69,10 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	private FrameLayout mFrameLayout;
 	private boolean mFirstTouch = true;
 
-	private final HashMap<String, SoftReference<Bitmap>> cache = new HashMap<String,  SoftReference<Bitmap>>();
-	private File cacheDir;
+	private final HashMap<Integer, SoftReference<Bitmap>> cache = 
+		new HashMap<Integer,  SoftReference<Bitmap>>();
+	private final int cacheMaxSize = 4;
+	private File imslpDir;
 
 	private static final float MIN_ZOOM = 1f;
 	private static final float MAX_ZOOM = 2f;
@@ -98,6 +105,12 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.viewer);
 
+		//Find the dir to save cached images
+		imslpDir = new File(Environment.getExternalStorageDirectory(),"Classico/" + mImslp);			
+		if(!imslpDir.exists()) {
+			imslpDir.mkdirs();
+		}
+
 		mFrameLayout = (FrameLayout) findViewById(R.id.mainLayout);
 
 		mImageView = (ImageView) findViewById(R.id.image_view);
@@ -128,7 +141,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			}
 		});
 
-		new DownloadPartitureTask().execute(getLink());
+		new DownloadPartitureTask().execute(getPageLink());
 		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 
 		mImageView.setOnTouchListener(this);
@@ -307,62 +320,37 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
-		//if (View.VISIBLE != v.getVisibility()) return;
-		//if (mPartiturePageNumber > mPartiture.size()) return;
 		mPartiturePageNumber++;
-		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
-		new DownloadPartitureTask().execute(getLink());
+		new DownloadPartitureTask().execute(getPageLink());
 	}
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
-		//if (View.VISIBLE != mPrev.getVisibility()) return;
-		//if (mPartiturePageNumber == 0) return;
 		mPartiturePageNumber--;
-		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
-		new DownloadPartitureTask().execute(getLink());
+		new DownloadPartitureTask().execute(getPageLink());
 	}
-
-	//	private void fillData() {
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/1.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/2.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/3.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/4.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/5.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/6.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/7.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/8.jpg");
-	//		mPartiture.add("http://members.home.nl/yourdesktop/highresolution/9.jpg");
-	//	}
 
 	private class DownloadPartitureTask extends AsyncTask<String, Void, Bitmap> {
 		private ProgressDialog dialog;
 
 		@Override
-		protected void onPreExecute() {		
+		protected void onPreExecute() {
 			super.onPreExecute();
 			dialog = ProgressDialog.show(PartitureViewer.this, "", 
 					"Loading. Please wait...", true);
 		}
 
 		@Override
-		protected Bitmap doInBackground(String... params) {			
+		protected Bitmap doInBackground(String... params) {
 			Log.d(TAG, "Load new partiture page");		
 
-			//Find the dir to save cached images
-			cacheDir = new File(Environment.getExternalStorageDirectory(),"Partitures");			
-			if(!cacheDir.exists()) {
-				cacheDir.mkdirs();
+			final Bitmap bitmap = loadBitmap();
+			if(bitmap !=null) {
+				return bitmap;
 			}
-
-			try{
+			try {
+				Log.d(TAG, "load bitmap from server");
 				URL url = new URL(params[0]);
-
-				//				if (cache.containsKey(url.toString())) {
-				//					final File file = new File(dir, cache.get);
-				//					BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
-				//					loadPageFromCache(url);
-				//				}
 
 				URLConnection ucon = url.openConnection();
 				InputStream is = ucon.getInputStream();
@@ -377,7 +365,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				bis.close();
 				if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
 					return null;
-				}				
+				}
 				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
 			} catch (IOException e) {
 				Log.e(TAG, "Partiture load failed", e);
@@ -390,19 +378,15 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		protected void onPostExecute(Bitmap result) {
 			super.onPostExecute(result);
 			if(result != null) {
-				if (mOriginBitmap != null) {
-					mOriginBitmap.recycle();
-				}
-				mOriginBitmap = result;
-				mBitmapHeight = mOriginBitmap.getHeight();
-				mBitmapWidth = mOriginBitmap.getWidth();
-				mImageView.setImageBitmap(mOriginBitmap);	
-				mImageView.setScaleType(ScaleType.FIT_CENTER);
-
-				mFirstTouch = true;					
+//				if (mOriginBitmap != null) {
+//					mOriginBitmap.recycle();
+//				}
+				saveBitmap(result);
+				setBitmap(result);			
 			} else {
 				Toast.makeText(getApplicationContext(), "Score wasn't found", Toast.LENGTH_LONG).show();
 			}
+
 			dialog.dismiss();
 		}		
 	}
@@ -425,9 +409,62 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	}
 
-	private String getLink() {
-		final String url = WEB_SERVER + mImslp + "&page=" + mPartiturePageNumber; 
+	private String getPageLink() {
+		final Display display = getWindowManager().getDefaultDisplay(); 
+		final String url = WEB_SERVER + mImslp
+		+ "&h=" + display.getHeight()
+		+ "&page=" + mPartiturePageNumber; 
 		Log.d(TAG, "load image from url: " + url);
 		return url;
+	}
+
+	private void saveBitmap(final Bitmap bitmap) {
+		if(cache.containsKey(mPartiturePageNumber)) {
+			return;
+		}
+		if(cache.size() < cacheMaxSize) {
+			Log.d(TAG, "save to cache");
+			cache.put(mPartiturePageNumber, new SoftReference<Bitmap>(bitmap));
+		} else {
+			Log.d(TAG, "save to cache with update");
+			cache.remove(mPartiturePageNumber + cacheMaxSize/2);
+			cache.remove(mPartiturePageNumber - cacheMaxSize/2);
+			cache.put(mPartiturePageNumber, new SoftReference<Bitmap>(bitmap));
+		}
+		File file = new File(imslpDir, mPartiturePageNumber+".jpg");
+		if (!file.exists()) {
+			Log.d(TAG, "save bitmap in file");
+			try {
+				bitmap.compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private Bitmap loadBitmap() {
+		final File file = new File(imslpDir, mPartiturePageNumber+".jpg");
+		if(cache.containsKey(mPartiturePageNumber)) {
+			Log.d(TAG, "load bitmap from cache");
+			return cache.get(mPartiturePageNumber).get();
+		} else if (file.exists()) {
+			try {
+				Log.d(TAG, "load bitmap from file");
+				return BitmapFactory.decodeStream(new FileInputStream(file));
+			} catch (FileNotFoundException e) {			
+				e.printStackTrace();
+			}
+		} 
+		return null;
+	}
+
+	private void setBitmap(final Bitmap bitmap) {
+		mOriginBitmap = bitmap;
+		mBitmapHeight = mOriginBitmap.getHeight();
+		mBitmapWidth = mOriginBitmap.getWidth();
+		mImageView.setImageBitmap(mOriginBitmap);	
+		mImageView.setScaleType(ScaleType.FIT_CENTER);
+
+		mFirstTouch = true;		
 	}
 }

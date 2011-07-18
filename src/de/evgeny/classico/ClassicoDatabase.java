@@ -1,55 +1,35 @@
 package de.evgeny.classico;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 
 import android.app.SearchManager;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
-import android.os.Handler;
 import android.provider.BaseColumns;
-import android.text.TextUtils;
-import android.util.Log;
 
 public class ClassicoDatabase {
 
 	private final static String TAG = ClassicoDatabase.class.getSimpleName();
 
-	//The columns we'll include in the dictionary table
 	public static final String KEY_COMPOSER = SearchManager.SUGGEST_COLUMN_TEXT_1;
 	public static final String KEY_COMPOSITION = SearchManager.SUGGEST_COLUMN_TEXT_2;
 	public static final String KEY_COMPOSITION_ID = "comp_id";
 
-	//private static final String DATABASE_NAME = "classico";
 	public static final String DATABASE_NAME = "/sdcard/classico.db";
 	private static final String FTS_VIRTUAL_TABLE = "FTSclassico";
 	public static final String SCORE_TABLE = "scores";
-	private static final int DATABASE_VERSION = 2;
 
-	//private static ClassicoOpenHelper sDatabaseOpenHelper;
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
-	public static SQLiteDatabase sDatabase;
-	private static Context sContext;
-	public static Handler sHandler;
+	private SQLiteDatabase mClassicoDatabase;
 
-
-	public static void init(Context context, Handler handler) {
-		Log.d(TAG, "init() with handler: ");
-		//sDatabaseOpenHelper = new ClassicoOpenHelper(context);
-		sHandler = handler;
-		sContext = context;
-		//open db to start load the data
-		//sDatabase = sDatabaseOpenHelper.getReadableDatabase();
-		sDatabase = SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
-		//loadClassico();
+	public ClassicoDatabase() {
+		mClassicoDatabase = 
+			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
+	}
+	
+	public void close() {
+		mClassicoDatabase.close();
 	}
 	
 	/**
@@ -69,7 +49,23 @@ public class ClassicoDatabase {
 				SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
 		return map;
 	}
+	
 
+	public Cursor getCursor(String table, String[] columns, String selection, String[] selectionArgs) {
+		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+		builder.setTables(table);
+		Cursor cursor = builder.query(mClassicoDatabase,
+				columns, selection, selectionArgs, null, null, null);
+				//columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");				
+		if (cursor == null) {
+			return null;
+		} else if (!cursor.moveToFirst()) {
+			cursor.close();
+			return null;
+		}
+		return cursor;
+	}
+	
 	/**
 	 * Returns a Cursor positioned at the word specified by rowId
 	 *
@@ -77,7 +73,7 @@ public class ClassicoDatabase {
 	 * @param columns The columns to include, if null then all are included
 	 * @return Cursor positioned to matching word, or null if not found.
 	 */
-	public static Cursor getComposer(String rowId, String[] columns) {
+	public Cursor getComposer(String rowId, String[] columns) {
 		String selection = "rowid = ?";
 		String[] selectionArgs = new String[] {rowId};
 
@@ -91,7 +87,7 @@ public class ClassicoDatabase {
 	 * @param columns The columns to include, if null then all are included
 	 * @return Cursor over all words that match, or null if none found.
 	 */
-	public static Cursor getComposerMatches(String query, String[] columns) {
+	public Cursor getComposerMatches(String query, String[] columns) {
 		String selection = FTS_VIRTUAL_TABLE + " MATCH ?";
 		String[] selectionArgs = new String[] {query+"*"};
 
@@ -119,7 +115,7 @@ public class ClassicoDatabase {
 	 * @param columns The columns to return
 	 * @return A Cursor over all rows matching the query
 	 */
-	private static Cursor query(String selection, String[] selectionArgs, String[] columns) {
+	private Cursor query(String selection, String[] selectionArgs, String[] columns) {
 		/* The SQLiteBuilder provides a map for all possible columns requested to
 		 * actual columns in the database, creating a simple column alias mechanism
 		 * by which the ContentProvider does not need to know the real column names
@@ -127,7 +123,8 @@ public class ClassicoDatabase {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
 		builder.setTables(FTS_VIRTUAL_TABLE);
 		builder.setProjectionMap(mColumnMap);
-		Cursor cursor = builder.query(sDatabase,
+		
+		Cursor cursor = builder.query(mClassicoDatabase,
 				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID);
 				//columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");				
 		if (cursor == null) {
@@ -137,113 +134,5 @@ public class ClassicoDatabase {
 			return null;
 		}
 		return cursor;
-	}
-
-
-	/**
-	 * Starts a thread to load the database table with words
-	 */
-	public static void loadClassico() {
-		Log.w(TAG, "load database");        			
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-					sHandler.sendEmptyMessage(MainActivity.LOAD_DATA_START);					
-					loadCompositions();
-					sHandler.sendEmptyMessage(MainActivity.LOAD_DATA_FINISH);					
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		}).start();
-	}
-
-	private static void loadCompositions() throws IOException {
-		Log.d(TAG, "Loading rows...");
-		final Resources resources = sContext.getResources();
-
-		InputStream inputStream;
-		for (int i = 0; i < 2; i++) {            	
-			if (i == 0) {
-				inputStream = resources.openRawResource(R.raw.comp_properties_1);
-			} else {
-				inputStream = resources.openRawResource(R.raw.comp_properties_2);
-			}
-			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));            
-
-			try {
-				String line;
-				line = reader.readLine();
-				Log.d(TAG, line);
-				while ((line = reader.readLine()) != null) {
-					String[] strings = TextUtils.split(line, ";");
-					if (strings.length < 3) continue;
-					long id = addRow(strings[0].trim(), strings[1].trim(), strings[2].trim());
-					if (id < 0) {
-						Log.e(TAG, "unable to add word: " + strings[0].trim());
-					}
-				}
-			} finally {
-				reader.close();
-			}
-		}
-		Log.d(TAG, "DONE loading words.");
-	}
-
-	/**
-	 * Add a word to the dictionary.
-	 * @return rowId or -1 if failed
-	 */
-	private static long addRow(String composer, String composition, String comp_id) {
-		ContentValues initialValues = new ContentValues();
-		initialValues.put(KEY_COMPOSER, composer);
-		initialValues.put(KEY_COMPOSITION, composition);
-		initialValues.put(KEY_COMPOSITION_ID, comp_id);		
-
-		return sDatabase.insert(FTS_VIRTUAL_TABLE, null, initialValues);
-	}
-
-	/**
-	 * This creates/opens the database.
-	 */
-	private static class ClassicoOpenHelper extends SQLiteOpenHelper {
-
-		private final Context mHelperContext;
-		private static SQLiteDatabase mDatabase;
-
-		/* Note that FTS3 does not support column constraints and thus, you cannot
-		 * declare a primary key. However, "rowid" is automatically used as a unique
-		 * identifier, so when making requests, we will use "_id" as an alias for "rowid"
-		 */
-		private static final String FTS_TABLE_CREATE =
-			"CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
-			" USING fts3 (" +
-			KEY_COMPOSER + ", " +
-			KEY_COMPOSITION + ", " +
-			KEY_COMPOSITION_ID + ");";
-
-
-		ClassicoOpenHelper(Context context) {        	
-			super(context, DATABASE_NAME, null, DATABASE_VERSION);
-			Log.w(TAG, "classicoOpenHelper");
-			mHelperContext = context;
-		}		
-
-		@Override
-		public void onCreate(SQLiteDatabase db) {
-			Log.d(TAG, "onCreate helper");
-
-			mDatabase = db;            
-			mDatabase.execSQL(FTS_TABLE_CREATE);
-			//loadClassico();
-		}
-
-		@Override
-		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-					+ newVersion + ", which will destroy all old data");
-			db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
-			onCreate(db);
-		}
 	}
 }
