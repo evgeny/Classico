@@ -79,6 +79,13 @@ public class ClassicoDatabase {
 
 		return query(selection, selectionArgs, columns);
 	}
+	
+	public Cursor getScores(String compId, String[] columns) {
+		String selection = "comp_id = ?";
+		String[] selectionArgs = new String[] {compId};
+
+		return query(selection, selectionArgs, columns);
+	}
 
 	/**
 	 * Returns a Cursor over all words that match the given query

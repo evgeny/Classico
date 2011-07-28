@@ -21,6 +21,8 @@ public class ComposerProvider extends ContentProvider {
 	"/vnd.evgeny.classico";
 	public static final String COMPOSITION_MIME_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE +
 	"/vnd.evgeny.classico";
+	public static final String SCORE_MIME_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE +
+	"/vnd.evgeny.classico";
 
 	private ClassicoDatabase mClassicoDatabase;
 
@@ -29,6 +31,7 @@ public class ComposerProvider extends ContentProvider {
 	private static final int GET_COMPOSITION = 1;
 	private static final int SEARCH_SUGGEST = 2;
 	private static final int REFRESH_SHORTCUT = 3;
+	private static final int GET_SCORE = 4;
 	private static final UriMatcher sURIMatcher = buildUriMatcher();
 
 
@@ -55,7 +58,8 @@ public class ComposerProvider extends ContentProvider {
 		// to get suggestions...
 		matcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY, SEARCH_SUGGEST);
 		matcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY + "/*", SEARCH_SUGGEST);
-
+		// imslp table
+		matcher.addURI(AUTHORITY, "classico/imslp/#", GET_SCORE);
 		return matcher;
 	}
 
@@ -72,6 +76,8 @@ public class ComposerProvider extends ContentProvider {
                 return COMPOSITIONS_MIME_TYPE;
             case GET_COMPOSITION:
                 return COMPOSITION_MIME_TYPE;
+            case GET_SCORE:
+                return SCORE_MIME_TYPE;
             case SEARCH_SUGGEST:
                 return SearchManager.SUGGEST_MIME_TYPE;
             case REFRESH_SHORTCUT:
@@ -114,6 +120,8 @@ public class ComposerProvider extends ContentProvider {
 			return search(selectionArgs[0]);
 		case GET_COMPOSITION:
 			return getComposition(uri);
+		case GET_SCORE:
+			return getScore(uri);
 		default:
 			throw new IllegalArgumentException("Unknown Uri: " + uri);
 		}
@@ -149,8 +157,17 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION,
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 
-		//return mClassico.getComposer(rowId, columns);
 		return mClassicoDatabase.getComposer(rowId, columns);
+	}
+	
+	private Cursor getScore(Uri uri) {
+		String compId = uri.getLastPathSegment();
+		final String[] columns = new String[]{"_id", "imslp", "meta"};
+		final String selection = "comp_id=?";
+		final String[] selectionArgs = new String[]{compId};
+		
+		return mClassicoDatabase.getCursor(
+				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs);
 	}
 
 	@Override
@@ -159,6 +176,4 @@ public class ComposerProvider extends ContentProvider {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-	
-
 }

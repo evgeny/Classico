@@ -18,7 +18,6 @@ public class ScoreList extends Activity {
 	private ListView mListView;
 	private int mCompositionId;
 	private Cursor imslpCursor;
-	private ClassicoDatabase mClassicoDatabase;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -42,19 +41,19 @@ public class ScoreList extends Activity {
 		
 		mListView = (ListView) findViewById(R.id.score_list);
 		
-		final String[] columns = new String[]{"_id", "imslp", "meta"};
-		final String selection = "comp_id=?";
-		final String[] selectionArgs = new String[]{String.valueOf(mCompositionId)};
+		Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
+				 "imslp/" + String.valueOf(mCompositionId));
 		
-		mClassicoDatabase = new ClassicoDatabase();
-		Log.d(TAG, "get imslp cursor");
-		imslpCursor = mClassicoDatabase.getCursor(
-				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs);
+		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
+		imslpCursor = managedQuery(data, null, null,
+				null, null);
+		
+		Log.d(TAG, "1");
 		String[] from = new String[] { "imslp", "meta" };
 
 		int[] to = new int[] { R.id.composer,
 				R.id.composition };
-
+		Log.d(TAG, "2");
 		// Create a simple cursor adapter for the definitions and apply them to the ListView
 		SimpleCursorAdapter scores = new SimpleCursorAdapter(this,
 				R.layout.result, imslpCursor, from, to);
@@ -76,6 +75,5 @@ public class ScoreList extends Activity {
 	protected void onDestroy() {
 		super.onDestroy();
 		imslpCursor.close();
-		mClassicoDatabase.close();
 	}
 }

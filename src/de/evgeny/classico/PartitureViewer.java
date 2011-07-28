@@ -10,8 +10,8 @@ import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 import org.apache.http.util.ByteArrayBuffer;
 
@@ -41,16 +41,12 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.Toast;
 import android.widget.ZoomControls;
 
 public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
 
 	private static final String TAG = PartitureViewer.class.getSimpleName();
 
-	//database parameters
-	private ArrayList<String> mPartiture;
-	private int mPartiturePageNumber;
 	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
 	private String mImslp;
 
@@ -69,13 +65,12 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	private FrameLayout mFrameLayout;
 	private boolean mFirstTouch = true;
 
-	private final HashMap<Integer, SoftReference<Bitmap>> cache = 
-		new HashMap<Integer,  SoftReference<Bitmap>>();
-	private final int cacheMaxSize = 4;
+	public HashMap<Integer, SoftReference<Bitmap>> cache;
+	private final int cacheSize = 8;
+	private int cacheOffset;
+	private int currentPageNumber;
+	private int lastPageNumber;
 	private File imslpDir;
-
-	private static final float MIN_ZOOM = 1f;
-	private static final float MAX_ZOOM = 2f;
 
 	private ImageView mImageView;
 
@@ -114,9 +109,12 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		mFrameLayout = (FrameLayout) findViewById(R.id.mainLayout);
 
 		mImageView = (ImageView) findViewById(R.id.image_view);
-		mPartiture = new ArrayList<String>();
 		//fillData();
-		mPartiturePageNumber = 1;
+		cacheOffset = 0;
+		cache = new HashMap<Integer,  SoftReference<Bitmap>>();
+		currentPageNumber = 1;
+		//		mPartiturePageNumber = 1;
+		//		mCurrentLoadedPage = 1;
 		mZoomControls = (ZoomControls) findViewById(R.id.zoomControls);
 		mZoomControls.setOnZoomInClickListener(new OnClickListener() {
 
@@ -141,7 +139,8 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			}
 		});
 
-		new DownloadPartitureTask().execute(getPageLink());
+		new FillCacheTask().execute();
+		//new FillCacheTask().execute(getPageLink(mPartiturePageNumber));
 		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 
 		mImageView.setOnTouchListener(this);
@@ -165,14 +164,14 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	private void controllNavigationAnimation() {	
 		Log.d(TAG, "controllNavigationAnimation");
 		mZoomControls.clearAnimation();
-		if (mPartiturePageNumber == 0) {
+		if (currentPageNumber == 0) {
 			mNext.clearAnimation();					
 			mNext.startAnimation(mFadeOutAnimation);
 			mPrev.startAnimation(mFadeOutAnimation);
-		} else if (mPartiturePageNumber == (mPartiture.size() - 1)) {
+		} else if (currentPageNumber == lastPageNumber) {
 			mPrev.clearAnimation();
 			mPrev.startAnimation(mFadeOutAnimation);
-			mNext.startAnimation(mFadeOutAnimation);
+			//mNext.startAnimation(mFadeOutAnimation);
 		} else {
 			mNext.clearAnimation();		
 			mPrev.clearAnimation();
@@ -320,75 +319,104 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
-		mPartiturePageNumber++;
-		new DownloadPartitureTask().execute(getPageLink());
+		currentPageNumber++;
+		if (currentPageNumber > cacheSize / 2) {
+			cacheOffset++;
+
+		} 
+		new FillCacheTask().execute();
 	}
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
-		mPartiturePageNumber--;
-		new DownloadPartitureTask().execute(getPageLink());
+		currentPageNumber--;
+		if (currentPageNumber > cacheSize / 2) {
+			cacheOffset--;
+		} 
+		new FillCacheTask().execute();
 	}
 
-	private class DownloadPartitureTask extends AsyncTask<String, Void, Bitmap> {
+	private class FillCacheTask extends AsyncTask<String, Boolean, Boolean> {
 		private ProgressDialog dialog;
+		private boolean dialogOn = false;
 
 		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			dialog = ProgressDialog.show(PartitureViewer.this, "", 
-					"Loading. Please wait...", true);
-		}
+		protected Boolean doInBackground(String... params) {
+			Log.d(TAG, "Load new partiture page");
 
-		@Override
-		protected Bitmap doInBackground(String... params) {
-			Log.d(TAG, "Load new partiture page");		
-
-			final Bitmap bitmap = loadBitmap();
-			if(bitmap !=null) {
-				return bitmap;
-			}
-			try {
-				Log.d(TAG, "load bitmap from server");
-				URL url = new URL(params[0]);
-
-				URLConnection ucon = url.openConnection();
-				InputStream is = ucon.getInputStream();
-				BufferedInputStream bis = new BufferedInputStream(is);
-
-				ByteArrayBuffer baf = new ByteArrayBuffer(50);
-				int current = 0;
-				while ((current = bis.read()) != -1) {
-					baf.append((byte) current);
-				}					
-
-				bis.close();
-				if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
-					return null;
+			for (int i = cacheOffset + 1; i <= cacheOffset + cacheSize; i++) {
+				if (!isBitmapInCache(i)) {
+					if (!loadFromFile(i)) {
+						if (!loadFromServer(i)) {
+							lastPageNumber = i - 1;
+							Log.d(TAG, "last avaible page is " + lastPageNumber);
+							return false;
+						}
+					}
 				}
-				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
-			} catch (IOException e) {
-				Log.e(TAG, "Partiture load failed", e);
-				finish();
+				if (dialogOn) {
+					publishProgress(false);
+					dialogOn = false;
+					Log.d(TAG, "bitmap size" + cache.get(currentPageNumber).get().toString());
+				}
+				if (i == currentPageNumber) {
+					publishProgress(true);
+					dialogOn = true;
+				} 
 			}
+
+			//			final Bitmap bitmap = loadBitmap();
+			//			if(bitmap != null) {
+			//				return bitmap;
+			//			}
+			//			try {
+			//				Log.d(TAG, "load bitmap from server");
+			//				URL url = new URL(params[0]);
+			//
+			//				URLConnection ucon = url.openConnection();
+			//				InputStream is = ucon.getInputStream();
+			//				BufferedInputStream bis = new BufferedInputStream(is);
+			//
+			//				ByteArrayBuffer baf = new ByteArrayBuffer(50);
+			//				int current = 0;
+			//				while ((current = bis.read()) != -1) {
+			//					baf.append((byte) current);
+			//				}					
+			//
+			//				bis.close();
+			//				if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
+			//					return null;
+			//				}
+			//				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
+			//			} catch (IOException e) {
+			//				Log.e(TAG, "Partiture load failed", e);
+			//				finish();
+			//			}
+			Log.d(TAG, "background task finished");
 			return null;
 		}
 
 		@Override
-		protected void onPostExecute(Bitmap result) {
-			super.onPostExecute(result);
-			if(result != null) {
-//				if (mOriginBitmap != null) {
-//					mOriginBitmap.recycle();
-//				}
-				saveBitmap(result);
-				setBitmap(result);			
+		protected void onProgressUpdate(Boolean... values) {
+			super.onProgressUpdate(values);
+			if (values[0]) {
+				Log.d(TAG, "prepaire to show score");
+				dialog = ProgressDialog.show(PartitureViewer.this, "", 
+						"Loading. Please wait...", true);
 			} else {
-				Toast.makeText(getApplicationContext(), "Score wasn't found", Toast.LENGTH_LONG).show();
+				Log.d(TAG, "show score");
+				dialog.dismiss();
+				Log.d(TAG, "pages in cache " + cache.size());
+				Set<Integer> keys = cache.keySet();
+				//Collection<SoftReference<Bitmap>> maps = cache.values();
+				for (Integer integer : keys) {
+					Log.d(TAG, "===PAGE===  " + integer);
+					Log.d(TAG, "bitmap size " + values[0].toString());
+				}
+				Log.d(TAG, "show page number " + currentPageNumber);
+				setBitmap(cache.get(currentPageNumber).get());
 			}
-
-			dialog.dismiss();
-		}		
+		}	
 	}
 
 	@Override
@@ -409,56 +437,130 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	}
 
-	private String getPageLink() {
+	private String getPageLink(final int pageNumber) {
 		final Display display = getWindowManager().getDefaultDisplay(); 
 		final String url = WEB_SERVER + mImslp
 		+ "&h=" + display.getHeight()
-		+ "&page=" + mPartiturePageNumber; 
-		Log.d(TAG, "load image from url: " + url);
+		+ "&page=" + pageNumber; 
+		Log.d(TAG, "load page "+ pageNumber +" from url: " + url);
 		return url;
 	}
 
-	private void saveBitmap(final Bitmap bitmap) {
-		if(cache.containsKey(mPartiturePageNumber)) {
-			return;
-		}
-		if(cache.size() < cacheMaxSize) {
-			Log.d(TAG, "save to cache");
-			cache.put(mPartiturePageNumber, new SoftReference<Bitmap>(bitmap));
-		} else {
-			Log.d(TAG, "save to cache with update");
-			cache.remove(mPartiturePageNumber + cacheMaxSize/2);
-			cache.remove(mPartiturePageNumber - cacheMaxSize/2);
-			cache.put(mPartiturePageNumber, new SoftReference<Bitmap>(bitmap));
-		}
-		File file = new File(imslpDir, mPartiturePageNumber+".jpg");
+	//	private void saveBitmap(final Bitmap bitmap, final int pageNumber) {
+	//		if(cache.containsKey(pageNumber)) {
+	//			return;
+	//		}
+	//		if(cache.size() < cacheSize) {
+	//			Log.d(TAG, "save to cache");
+	//			cache.put(pageNumber, new SoftReference<Bitmap>(bitmap));
+	//		} else {
+	//			Log.d(TAG, "save to cache with update");
+	//			cache.remove(pageNumber + cacheSize/2);
+	//			cache.remove(pageNumber - cacheSize/2);
+	//			cache.put(pageNumber, new SoftReference<Bitmap>(bitmap));
+	//		}
+	//		File file = new File(imslpDir, pageNumber + ".jpg");
+	//		if (!file.exists()) {
+	//			Log.d(TAG, "save bitmap in file");
+	//			try {
+	//				bitmap.compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
+	//			} catch (FileNotFoundException e) {
+	//				e.printStackTrace();
+	//			}
+	//		}
+	//	}
+
+	//	private Bitmap loadBitmap(final int pageNumber) {
+	//		final File file = new File(imslpDir, pageNumber + ".jpg");
+	//		if(cache.containsKey(pageNumber)) {
+	//			Log.d(TAG, "load bitmap from cache");
+	//			return cache.get(pageNumber).get();
+	//		} else if (file.exists()) {
+	//			try {
+	//				Log.d(TAG, "load bitmap from file");
+	//				return BitmapFactory.decodeStream(new FileInputStream(file));
+	//			} catch (FileNotFoundException e) {			
+	//				e.printStackTrace();
+	//			}
+	//		} 
+	//		return null;
+	//	}
+
+	private void saveToCache(final SoftReference<Bitmap> bitmap, final int pageNumber) {
+		//TODO remove side soft refs from cache
+		Log.d(TAG, "save score " + pageNumber + " in cache" + bitmap.get().toString());
+		cache.put(pageNumber, bitmap);
+	}
+
+	private void saveToFile(final SoftReference<Bitmap> bitmap, final int pageNumber) {
+		File file = new File(imslpDir, pageNumber + ".jpg");
 		if (!file.exists()) {
-			Log.d(TAG, "save bitmap in file");
+			Log.d(TAG, "save page " + pageNumber + " in file");
 			try {
-				bitmap.compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
+				bitmap.get().compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
+		saveToCache(bitmap, pageNumber);
 	}
 
-	private Bitmap loadBitmap() {
-		final File file = new File(imslpDir, mPartiturePageNumber+".jpg");
-		if(cache.containsKey(mPartiturePageNumber)) {
-			Log.d(TAG, "load bitmap from cache");
-			return cache.get(mPartiturePageNumber).get();
-		} else if (file.exists()) {
+	private boolean loadFromServer(final int pageNumber) {
+		try {
+			Log.d(TAG, "load page " + pageNumber + " from server");
+			URL url = new URL(getPageLink(pageNumber));
+
+			URLConnection ucon = url.openConnection();
+			InputStream is = ucon.getInputStream();
+			BufferedInputStream bis = new BufferedInputStream(is);
+
+			ByteArrayBuffer baf = new ByteArrayBuffer(50);
+			int current = 0;
+			while ((current = bis.read()) != -1) {
+				baf.append((byte) current);
+			}					
+
+			bis.close();
+			if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
+				return false;
+			}
+
+			final SoftReference<Bitmap> bitmap = 
+				new SoftReference<Bitmap>(BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length()));
+			saveToFile(bitmap, pageNumber);
+			return true;
+		} catch (IOException e) {
+			Log.e(TAG, "Partiture load failed", e);
+			return false;
+		}
+	}
+
+	private boolean loadFromFile(final int pageNumber) {
+		final File file = new File(imslpDir, pageNumber + ".jpg");
+		if (file.exists()) {
 			try {
-				Log.d(TAG, "load bitmap from file");
-				return BitmapFactory.decodeStream(new FileInputStream(file));
+				Log.d(TAG, "load page " + pageNumber + " from file");
+				final SoftReference<Bitmap> softBitmap = 
+					new SoftReference<Bitmap>(BitmapFactory.decodeStream(new FileInputStream(file)));
+				saveToCache(softBitmap, pageNumber);
+
 			} catch (FileNotFoundException e) {			
 				e.printStackTrace();
+				return false;
 			}
+			return true;
 		} 
-		return null;
+		return false;
+	}
+
+	private boolean isBitmapInCache(final int pageNumber) {
+		return cache.containsKey(pageNumber);
 	}
 
 	private void setBitmap(final Bitmap bitmap) {
+		if (mOriginBitmap != null) {
+			mOriginBitmap.recycle();
+		}
 		mOriginBitmap = bitmap;
 		mBitmapHeight = mOriginBitmap.getHeight();
 		mBitmapWidth = mOriginBitmap.getWidth();
