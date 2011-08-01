@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -65,11 +64,11 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	private FrameLayout mFrameLayout;
 	private boolean mFirstTouch = true;
 
-	public HashMap<Integer, SoftReference<Bitmap>> cache;
+	public HashMap<Integer, Bitmap> cache;
 	private final int cacheSize = 8;
 	private int cacheOffset;
 	private int currentPageNumber;
-	private int lastPageNumber;
+	private int lastPageNumber = -1;
 	private File imslpDir;
 
 	private ImageView mImageView;
@@ -95,6 +94,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		//layout
 		final Bundle extras = getIntent().getExtras();
 		mImslp = extras.getString("imslp");
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -107,14 +107,16 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		}
 
 		mFrameLayout = (FrameLayout) findViewById(R.id.mainLayout);
-
 		mImageView = (ImageView) findViewById(R.id.image_view);
-		//fillData();
+
+		//cache
 		cacheOffset = 0;
-		cache = new HashMap<Integer,  SoftReference<Bitmap>>();
+		cache = new HashMap<Integer, Bitmap>();
 		currentPageNumber = 1;
-		//		mPartiturePageNumber = 1;
-		//		mCurrentLoadedPage = 1;
+		//start fill cache
+		new FillCacheTask().execute();
+		
+		//navigation
 		mZoomControls = (ZoomControls) findViewById(R.id.zoomControls);
 		mZoomControls.setOnZoomInClickListener(new OnClickListener() {
 
@@ -138,10 +140,6 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 			}
 		});
-
-		new FillCacheTask().execute();
-		//new FillCacheTask().execute(getPageLink(mPartiturePageNumber));
-		//new DownloadPartitureTask().execute(mPartiture.get(mPartiturePageNumber));
 
 		mImageView.setOnTouchListener(this);
 
@@ -320,7 +318,8 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
 		currentPageNumber++;
-		if (currentPageNumber > cacheSize / 2) {
+		if ((currentPageNumber > cacheSize / 2) || 
+				((lastPageNumber > 0) && (currentPageNumber < lastPageNumber - cacheSize / 2))) {
 			cacheOffset++;
 
 		} 
@@ -330,7 +329,8 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
 		currentPageNumber--;
-		if (currentPageNumber > cacheSize / 2) {
+		if ((currentPageNumber > cacheSize / 2) || 
+				((lastPageNumber > 0) && (currentPageNumber < lastPageNumber - cacheSize / 2))) {
 			cacheOffset--;
 		} 
 		new FillCacheTask().execute();
@@ -343,8 +343,10 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		@Override
 		protected Boolean doInBackground(String... params) {
 			Log.d(TAG, "Load new partiture page");
+			Log.d(TAG, "cache offset = " + cacheOffset);
 
 			for (int i = cacheOffset + 1; i <= cacheOffset + cacheSize; i++) {
+				if ((lastPageNumber >= 0) && (i > lastPageNumber)) break;
 				if (!isBitmapInCache(i)) {
 					if (!loadFromFile(i)) {
 						if (!loadFromServer(i)) {
@@ -357,7 +359,6 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				if (dialogOn) {
 					publishProgress(false);
 					dialogOn = false;
-					Log.d(TAG, "bitmap size" + cache.get(currentPageNumber).get().toString());
 				}
 				if (i == currentPageNumber) {
 					publishProgress(true);
@@ -392,6 +393,10 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			//				Log.e(TAG, "Partiture load failed", e);
 			//				finish();
 			//			}
+			if (dialogOn) {
+				publishProgress(false);
+				dialogOn = false;
+			}
 			Log.d(TAG, "background task finished");
 			return null;
 		}
@@ -400,21 +405,13 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		protected void onProgressUpdate(Boolean... values) {
 			super.onProgressUpdate(values);
 			if (values[0]) {
-				Log.d(TAG, "prepaire to show score");
 				dialog = ProgressDialog.show(PartitureViewer.this, "", 
 						"Loading. Please wait...", true);
 			} else {
-				Log.d(TAG, "show score");
 				dialog.dismiss();
 				Log.d(TAG, "pages in cache " + cache.size());
-				Set<Integer> keys = cache.keySet();
-				//Collection<SoftReference<Bitmap>> maps = cache.values();
-				for (Integer integer : keys) {
-					Log.d(TAG, "===PAGE===  " + integer);
-					Log.d(TAG, "bitmap size " + values[0].toString());
-				}
 				Log.d(TAG, "show page number " + currentPageNumber);
-				setBitmap(cache.get(currentPageNumber).get());
+				setBitmap(cache.get(currentPageNumber));
 			}
 		}	
 	}
@@ -486,18 +483,17 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	//		return null;
 	//	}
 
-	private void saveToCache(final SoftReference<Bitmap> bitmap, final int pageNumber) {
-		//TODO remove side soft refs from cache
-		Log.d(TAG, "save score " + pageNumber + " in cache" + bitmap.get().toString());
+	private void saveToCache(final Bitmap bitmap, final int pageNumber) {
+		Log.d(TAG, "save page " + pageNumber + " to cache");
 		cache.put(pageNumber, bitmap);
 	}
 
-	private void saveToFile(final SoftReference<Bitmap> bitmap, final int pageNumber) {
+	private void saveToFile(final Bitmap bitmap, final int pageNumber) {
 		File file = new File(imslpDir, pageNumber + ".jpg");
 		if (!file.exists()) {
-			Log.d(TAG, "save page " + pageNumber + " in file");
+			Log.d(TAG, "save page " + pageNumber + " to file");
 			try {
-				bitmap.get().compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
+				bitmap.compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -525,8 +521,8 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				return false;
 			}
 
-			final SoftReference<Bitmap> bitmap = 
-				new SoftReference<Bitmap>(BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length()));
+			final Bitmap bitmap = 
+				BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
 			saveToFile(bitmap, pageNumber);
 			return true;
 		} catch (IOException e) {
@@ -540,8 +536,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		if (file.exists()) {
 			try {
 				Log.d(TAG, "load page " + pageNumber + " from file");
-				final SoftReference<Bitmap> softBitmap = 
-					new SoftReference<Bitmap>(BitmapFactory.decodeStream(new FileInputStream(file)));
+				final Bitmap softBitmap = BitmapFactory.decodeStream(new FileInputStream(file));
 				saveToCache(softBitmap, pageNumber);
 
 			} catch (FileNotFoundException e) {			
@@ -554,6 +549,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	}
 
 	private boolean isBitmapInCache(final int pageNumber) {
+		Log.d(TAG, "isBitmapInCache");
 		return cache.containsKey(pageNumber);
 	}
 
