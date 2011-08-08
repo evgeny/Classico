@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
-import java.util.Set;
 
 import org.apache.http.util.ByteArrayBuffer;
 
