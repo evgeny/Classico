@@ -45,8 +45,7 @@ public class ScoreList extends Activity {
 				 "imslp/" + String.valueOf(mCompositionId));
 		
 		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
-		imslpCursor = managedQuery(data, null, null,
-				null, null);
+		imslpCursor = managedQuery(data, null, null, null, null);
 		
 		Log.d(TAG, "1");
 		String[] from = new String[] { "imslp", "meta" };

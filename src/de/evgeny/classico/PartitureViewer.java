@@ -14,7 +14,12 @@ import java.util.HashMap;
 import org.apache.http.util.ByteArrayBuffer;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -23,6 +28,9 @@ import android.graphics.PointF;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.FloatMath;
 import android.util.Log;
@@ -40,6 +48,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.ZoomControls;
+import de.evgeny.classico.CacheService.CacheServiceBinder;
 
 public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
 
@@ -47,6 +56,9 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
 	private String mImslp;
+	private Dialog mDialog;
+	private boolean restartTask = false;
+	private boolean taskRunned = false;
 
 	//navigation
 	private ImageButton mNext;
@@ -64,11 +76,14 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	private boolean mFirstTouch = true;
 
 	public HashMap<Integer, Bitmap> cache;
-	private final int cacheSize = 8;
-	private int cacheOffset;
+	private final int cacheSize = 4; //use even numbers
+	//private int cacheOffset;
 	private int currentPageNumber;
-	private int lastPageNumber = -1;
+	//private int loadingPage;
+	private int lastPageNumber = 1000; //bad decision
 	private File imslpDir;
+
+	//private FillCacheTask cacheTask;
 
 	private ImageView mImageView;
 
@@ -76,7 +91,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	Matrix matrix = new Matrix();
 	Matrix savedMatrix = new Matrix();
 
-	//Bitmap originImage = null;
+	Bitmap originImage = null;
 
 	// The 3 states (events) which the user is trying to perform
 	static final int NONE = 0;
@@ -109,12 +124,15 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		mImageView = (ImageView) findViewById(R.id.image_view);
 
 		//cache
-		cacheOffset = 0;
+		//cacheOffset = 0;
 		cache = new HashMap<Integer, Bitmap>();
 		currentPageNumber = 1;
 		//start fill cache
-		new FillCacheTask().execute();
-		
+		doBindService();
+		setBitmap2();
+		//		cacheTask = new FillCacheTask();
+		//		cacheTask.execute();
+
 		//navigation
 		mZoomControls = (ZoomControls) findViewById(R.id.zoomControls);
 		mZoomControls.setOnZoomInClickListener(new OnClickListener() {
@@ -316,36 +334,53 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	public void next(View v) {
 		Log.d(TAG, "Next pressed");
+		if (currentPageNumber == lastPageNumber) {
+			return;
+		}
 		currentPageNumber++;
-		if ((currentPageNumber > cacheSize / 2) || 
-				((lastPageNumber > 0) && (currentPageNumber < lastPageNumber - cacheSize / 2))) {
-			cacheOffset++;
-
-		} 
-		new FillCacheTask().execute();
+		setBitmap2();
 	}
 
 	public void prev(View v) {
 		Log.d(TAG, "Prev pressed");
+		if (currentPageNumber == 1) {
+			return;
+		}
 		currentPageNumber--;
-		if ((currentPageNumber > cacheSize / 2) || 
-				((lastPageNumber > 0) && (currentPageNumber < lastPageNumber - cacheSize / 2))) {
-			cacheOffset--;
-		} 
-		new FillCacheTask().execute();
+		setBitmap2();
 	}
 
-	private class FillCacheTask extends AsyncTask<String, Boolean, Boolean> {
-		private ProgressDialog dialog;
-		private boolean dialogOn = false;
+	private class FillCacheTask extends AsyncTask<Integer, Boolean, Boolean> {
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+
+			taskRunned = true;
+		}
 
 		@Override
-		protected Boolean doInBackground(String... params) {
-			Log.d(TAG, "Load new partiture page");
-			Log.d(TAG, "cache offset = " + cacheOffset);
+		protected Boolean doInBackground(Integer... params) {
+			Log.i(TAG, "Re/Fill cache");
+			int taskCurrentPage = params[0];
+			int cacheOffset = 0;
+			Log.i(TAG, "current page is " + taskCurrentPage);
 
+			//compute offset
+			if (taskCurrentPage > cacheSize / 2) {
+				cacheOffset = taskCurrentPage - cacheSize / 2;
+			} 
+			if (taskCurrentPage >= lastPageNumber - cacheSize / 2) {
+				cacheOffset = taskCurrentPage - cacheSize / 2;
+			}
+
+			Log.i(TAG, "cache offset = " + cacheOffset);
+			//(re)fill cache
 			for (int i = cacheOffset + 1; i <= cacheOffset + cacheSize; i++) {
-				if ((lastPageNumber >= 0) && (i > lastPageNumber)) break;
+				if (i > lastPageNumber) {
+					publishProgress(false);
+					break;
+				}
+				if (restartTask) break;
 				if (!isBitmapInCache(i)) {
 					if (!loadFromFile(i)) {
 						if (!loadFromServer(i)) {
@@ -355,46 +390,10 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 						}
 					}
 				}
-				if (dialogOn) {
-					publishProgress(false);
-					dialogOn = false;
-				}
+				//dismiss dialog if current page was loaded
 				if (i == currentPageNumber) {
-					publishProgress(true);
-					dialogOn = true;
-				} 
-			}
-
-			//			final Bitmap bitmap = loadBitmap();
-			//			if(bitmap != null) {
-			//				return bitmap;
-			//			}
-			//			try {
-			//				Log.d(TAG, "load bitmap from server");
-			//				URL url = new URL(params[0]);
-			//
-			//				URLConnection ucon = url.openConnection();
-			//				InputStream is = ucon.getInputStream();
-			//				BufferedInputStream bis = new BufferedInputStream(is);
-			//
-			//				ByteArrayBuffer baf = new ByteArrayBuffer(50);
-			//				int current = 0;
-			//				while ((current = bis.read()) != -1) {
-			//					baf.append((byte) current);
-			//				}					
-			//
-			//				bis.close();
-			//				if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
-			//					return null;
-			//				}
-			//				return BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
-			//			} catch (IOException e) {
-			//				Log.e(TAG, "Partiture load failed", e);
-			//				finish();
-			//			}
-			if (dialogOn) {
-				publishProgress(false);
-				dialogOn = false;
+					publishProgress(false);
+				}			
 			}
 			Log.d(TAG, "background task finished");
 			return null;
@@ -404,15 +403,26 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		protected void onProgressUpdate(Boolean... values) {
 			super.onProgressUpdate(values);
 			if (values[0]) {
-				dialog = ProgressDialog.show(PartitureViewer.this, "", 
+				mDialog = ProgressDialog.show(PartitureViewer.this, "", 
 						"Loading. Please wait...", true);
 			} else {
-				dialog.dismiss();
+				mDialog.dismiss();
 				Log.d(TAG, "pages in cache " + cache.size());
 				Log.d(TAG, "show page number " + currentPageNumber);
 				setBitmap(cache.get(currentPageNumber));
 			}
-		}	
+		}
+
+		@Override
+		protected void onPostExecute(Boolean result) {
+			super.onPostExecute(result);
+			if (restartTask) {
+				restartTask = false;
+				new FillCacheTask().execute(currentPageNumber);
+			} else {
+				taskRunned = false;
+			}
+		}
 	}
 
 	@Override
@@ -441,46 +451,6 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		Log.d(TAG, "load page "+ pageNumber +" from url: " + url);
 		return url;
 	}
-
-	//	private void saveBitmap(final Bitmap bitmap, final int pageNumber) {
-	//		if(cache.containsKey(pageNumber)) {
-	//			return;
-	//		}
-	//		if(cache.size() < cacheSize) {
-	//			Log.d(TAG, "save to cache");
-	//			cache.put(pageNumber, new SoftReference<Bitmap>(bitmap));
-	//		} else {
-	//			Log.d(TAG, "save to cache with update");
-	//			cache.remove(pageNumber + cacheSize/2);
-	//			cache.remove(pageNumber - cacheSize/2);
-	//			cache.put(pageNumber, new SoftReference<Bitmap>(bitmap));
-	//		}
-	//		File file = new File(imslpDir, pageNumber + ".jpg");
-	//		if (!file.exists()) {
-	//			Log.d(TAG, "save bitmap in file");
-	//			try {
-	//				bitmap.compress(CompressFormat.JPEG, 100, new FileOutputStream(file));
-	//			} catch (FileNotFoundException e) {
-	//				e.printStackTrace();
-	//			}
-	//		}
-	//	}
-
-	//	private Bitmap loadBitmap(final int pageNumber) {
-	//		final File file = new File(imslpDir, pageNumber + ".jpg");
-	//		if(cache.containsKey(pageNumber)) {
-	//			Log.d(TAG, "load bitmap from cache");
-	//			return cache.get(pageNumber).get();
-	//		} else if (file.exists()) {
-	//			try {
-	//				Log.d(TAG, "load bitmap from file");
-	//				return BitmapFactory.decodeStream(new FileInputStream(file));
-	//			} catch (FileNotFoundException e) {			
-	//				e.printStackTrace();
-	//			}
-	//		} 
-	//		return null;
-	//	}
 
 	private void saveToCache(final Bitmap bitmap, final int pageNumber) {
 		Log.d(TAG, "save page " + pageNumber + " to cache");
@@ -548,14 +518,14 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	}
 
 	private boolean isBitmapInCache(final int pageNumber) {
-		Log.d(TAG, "isBitmapInCache");
+		Log.d(TAG, "isBitmapInCache " + pageNumber);
 		return cache.containsKey(pageNumber);
 	}
 
 	private void setBitmap(final Bitmap bitmap) {
-		if (mOriginBitmap != null) {
-			mOriginBitmap.recycle();
-		}
+		//		if (mOriginBitmap != null) {
+		//			mOriginBitmap.recycle();
+		//		}
 		mOriginBitmap = bitmap;
 		mBitmapHeight = mOriginBitmap.getHeight();
 		mBitmapWidth = mOriginBitmap.getWidth();
@@ -563,5 +533,57 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		mImageView.setScaleType(ScaleType.FIT_CENTER);
 
 		mFirstTouch = true;		
+	}
+
+	private void setBitmap2() {
+		if (isBitmapInCache(currentPageNumber)) {
+			setBitmap(cache.get(currentPageNumber));
+		} 
+		if (!taskRunned) {
+			mDialog = ProgressDialog.show(PartitureViewer.this, "", 
+					"Loading. Please wait...", true);
+			new FillCacheTask().execute(currentPageNumber);
+		} else {
+			restartTask = true;
+		}
+	}
+
+	//RESEARCH DISTRICT
+	static final int TAKE_PAGE = 0;
+	private class ImageHandler extends Handler {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case TAKE_PAGE:
+				//TODO: dismiss dialog
+				mCacheServiceBinder.getPage();
+				break;
+			default:
+				super.handleMessage(msg);
+			}			
+		}
+	}
+
+	private CacheServiceBinder mCacheServiceBinder;
+
+	private ServiceConnection mCacheServiceConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			mCacheServiceBinder = null;
+		}
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mCacheServiceBinder = (CacheServiceBinder)service;
+			mCacheServiceBinder.setHandler(new ImageHandler());
+			mCacheServiceBinder.setDisplayHeight(800);
+			mCacheServiceBinder.setImslp(mImslp);
+		}
+	};
+
+	private void doBindService() {
+		bindService(new Intent(getApplicationContext(), CacheService.class), 
+				mCacheServiceConnection, Context.BIND_AUTO_CREATE);
 	}
 }

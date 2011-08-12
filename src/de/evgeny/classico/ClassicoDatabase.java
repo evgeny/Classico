@@ -132,7 +132,7 @@ public class ClassicoDatabase {
 		builder.setProjectionMap(mColumnMap);
 		
 		Cursor cursor = builder.query(mClassicoDatabase,
-				columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID);
+				columns, selection, selectionArgs, null, null, null);
 				//columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");				
 		if (cursor == null) {
 			return null;
