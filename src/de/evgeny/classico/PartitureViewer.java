@@ -16,10 +16,6 @@ import org.apache.http.util.ByteArrayBuffer;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -28,9 +24,6 @@ import android.graphics.PointF;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Message;
 import android.text.TextUtils;
 import android.util.FloatMath;
 import android.util.Log;
@@ -48,7 +41,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.ZoomControls;
-import de.evgeny.classico.CacheService.CacheServiceBinder;
 
 public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
 
@@ -128,7 +120,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		cache = new HashMap<Integer, Bitmap>();
 		currentPageNumber = 1;
 		//start fill cache
-		doBindService();
+		//doBindService();
 		setBitmap2();
 		//		cacheTask = new FillCacheTask();
 		//		cacheTask.execute();
@@ -386,7 +378,6 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 						if (!loadFromServer(i)) {
 							lastPageNumber = i - 1;
 							Log.d(TAG, "last avaible page is " + lastPageNumber);
-							return false;
 						}
 					}
 				}
@@ -409,7 +400,11 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				mDialog.dismiss();
 				Log.d(TAG, "pages in cache " + cache.size());
 				Log.d(TAG, "show page number " + currentPageNumber);
-				setBitmap(cache.get(currentPageNumber));
+				if(isBitmapInCache(currentPageNumber)) {
+					setBitmap(cache.get(currentPageNumber));
+				} else {
+					Log.e(TAG, "Unknown error: ");
+				}
 			}
 		}
 
@@ -546,44 +541,5 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		} else {
 			restartTask = true;
 		}
-	}
-
-	//RESEARCH DISTRICT
-	static final int TAKE_PAGE = 0;
-	private class ImageHandler extends Handler {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case TAKE_PAGE:
-				//TODO: dismiss dialog
-				mCacheServiceBinder.getPage();
-				break;
-			default:
-				super.handleMessage(msg);
-			}			
-		}
-	}
-
-	private CacheServiceBinder mCacheServiceBinder;
-
-	private ServiceConnection mCacheServiceConnection = new ServiceConnection() {
-
-		@Override
-		public void onServiceDisconnected(ComponentName name) {
-			mCacheServiceBinder = null;
-		}
-
-		@Override
-		public void onServiceConnected(ComponentName name, IBinder service) {
-			mCacheServiceBinder = (CacheServiceBinder)service;
-			mCacheServiceBinder.setHandler(new ImageHandler());
-			mCacheServiceBinder.setDisplayHeight(800);
-			mCacheServiceBinder.setImslp(mImslp);
-		}
-	};
-
-	private void doBindService() {
-		bindService(new Intent(getApplicationContext(), CacheService.class), 
-				mCacheServiceConnection, Context.BIND_AUTO_CREATE);
 	}
 }

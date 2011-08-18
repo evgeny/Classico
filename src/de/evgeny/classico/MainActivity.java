@@ -1,6 +1,8 @@
 package de.evgeny.classico;
 
-import android.app.Activity;
+import greendroid.app.GDActivity;
+import greendroid.widget.ActionBarItem;
+import greendroid.widget.ActionBarItem.Type;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.database.Cursor;
@@ -18,11 +20,11 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends GDActivity {
 	private final static String TAG = MainActivity.class.getSimpleName();
 
-	public static final int LOAD_DATA_START = 0;
-	public static final int LOAD_DATA_FINISH = 1;
+	//	public static final int LOAD_DATA_START = 0;
+	//	public static final int LOAD_DATA_FINISH = 1;
 
 	private TextView mTextView;
 	private ListView mListView;
@@ -31,16 +33,21 @@ public class MainActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Log.d(TAG, "onCreate(): ");
-		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		setContentView(R.layout.main);	
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		setActionBarContentView(R.layout.main);
 		
+		addActionBarItem(Type.Search, R.id.action_bar_search);
+
+		Log.d(TAG, "onCreate(): ");	
+		//requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+		//setContentView(R.layout.main);	
+
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list);
 
 		onNewIntent(getIntent());		
 	}
-	
+
 	@Override
 	protected void onNewIntent(final Intent intent) {
 		super.onNewIntent(intent);
@@ -59,7 +66,19 @@ public class MainActivity extends Activity {
 			showResults(query);
 		}
 	}
-	
+
+	@Override
+	public boolean onHandleActionBarItemClick(ActionBarItem item, int position) {			
+		switch (item.getItemId()) {                
+		case R.id.action_bar_search:
+			onSearchRequested();
+			break;
+		default:
+			return super.onHandleActionBarItemClick(item, position);
+		}
+		return true;
+	}
+
 	public void onSearchButtonClick(final View view) {
 		onSearchRequested();
 	}
@@ -109,7 +128,7 @@ public class MainActivity extends Activity {
 			});
 		}
 	}
-	
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();

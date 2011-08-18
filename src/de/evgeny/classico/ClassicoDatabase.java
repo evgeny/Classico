@@ -15,9 +15,10 @@ public class ClassicoDatabase {
 	public static final String KEY_COMPOSER = SearchManager.SUGGEST_COLUMN_TEXT_1;
 	public static final String KEY_COMPOSITION = SearchManager.SUGGEST_COLUMN_TEXT_2;
 	public static final String KEY_COMPOSITION_ID = "comp_id";
+	public static final String KEY_COMPOSITION_RATE = "rate";
 
 	public static final String DATABASE_NAME = "/sdcard/classico.db";
-	private static final String FTS_VIRTUAL_TABLE = "FTSclassico";
+	private static final String FTS_VIRTUAL_TABLE = "titles";
 	public static final String SCORE_TABLE = "scores";
 
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
@@ -43,6 +44,7 @@ public class ClassicoDatabase {
 		map.put(KEY_COMPOSER, KEY_COMPOSER);
 		map.put(KEY_COMPOSITION, KEY_COMPOSITION);
 		map.put(KEY_COMPOSITION_ID, KEY_COMPOSITION_ID);
+		map.put(KEY_COMPOSITION_RATE, KEY_COMPOSITION_RATE);
 		map.put(BaseColumns._ID, "rowid AS " +
 				BaseColumns._ID);
 		map.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID, "rowid AS " +
@@ -132,8 +134,8 @@ public class ClassicoDatabase {
 		builder.setProjectionMap(mColumnMap);
 		
 		Cursor cursor = builder.query(mClassicoDatabase,
-				columns, selection, selectionArgs, null, null, null);
-				//columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");				
+				//columns, selection, selectionArgs, null, null, null);
+				columns, selection, selectionArgs, null, null, "cast(" + KEY_COMPOSITION_RATE + " as integer) DESC");				
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {

@@ -25,6 +25,7 @@ public class ScoreList extends Activity {
 		Log.d(TAG, "onCreate()");
 		
 		setContentView(R.layout.scores_layout);
+		mListView = (ListView) findViewById(R.id.score_list);
 		
 		Uri uri = getIntent().getData();
 		Log.d(TAG, "uri=" + uri);
@@ -38,8 +39,6 @@ public class ScoreList extends Activity {
 			Log.d(TAG, "composition id = " + mCompositionId);
 			cursor.close();
 		}
-		
-		mListView = (ListView) findViewById(R.id.score_list);
 		
 		Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
 				 "imslp/" + String.valueOf(mCompositionId));
@@ -73,6 +72,5 @@ public class ScoreList extends Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		imslpCursor.close();
 	}
 }
