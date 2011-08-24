@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -34,6 +35,7 @@ public class MainActivity extends GDActivity {
 		super.onCreate(savedInstanceState);
 
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		//setContentView(R.layout.main);
 		setActionBarContentView(R.layout.main);
 		
 		addActionBarItem(Type.Search, R.id.action_bar_search);
@@ -43,7 +45,7 @@ public class MainActivity extends GDActivity {
 		//setContentView(R.layout.main);	
 
 		mTextView = (TextView) findViewById(R.id.text);
-		mListView = (ListView) findViewById(R.id.list);
+		mListView = (ListView) findViewById(R.id.list_titles);
 
 		onNewIntent(getIntent());		
 	}

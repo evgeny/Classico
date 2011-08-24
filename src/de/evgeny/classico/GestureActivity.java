@@ -16,47 +16,36 @@ import org.apache.http.util.ByteArrayBuffer;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.graphics.PointF;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.TextUtils;
-import android.util.FloatMath;
 import android.util.Log;
 import android.view.Display;
+import android.view.GestureDetector;
+import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
+import android.view.ScaleGestureDetector;
+import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener;
 import android.view.Window;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.ZoomControls;
 
-public class PartitureViewer extends Activity implements OnTouchListener, AnimationListener {
+public class GestureActivity extends Activity {
 
-	private static final String TAG = PartitureViewer.class.getSimpleName();
-
+	private static final String TAG = GestureDetector.class.getSimpleName();
+	
 	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
 	private String mImslp;
 	private Dialog mDialog;
 	private boolean restartTask = false;
 	private boolean taskRunned = false;
-
-	//navigation
-	private ImageButton mNext;
-	private ImageButton mPrev;
-	private Animation mFadeOutAnimation;
-	private ZoomControls mZoomControls;
 
 	private Bitmap mOriginBitmap;
 	private float[] mOriginMatrixValues = new float[9];
@@ -64,18 +53,13 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 	private float mBitmapWidth; 
 	private float mBitmapHeight;
 
-	private FrameLayout mFrameLayout;
 	private boolean mFirstTouch = true;
 
 	public HashMap<Integer, Bitmap> cache;
 	private final int cacheSize = 4; //use even numbers
-	//private int cacheOffset;
 	private int currentPageNumber;
-	//private int loadingPage;
-	private int lastPageNumber = 1000; //bad decision
+	private int lastPageNumber = 1000; //bad decision, but it's work
 	private File imslpDir;
-
-	//private FillCacheTask cacheTask;
 
 	private ImageView mImageView;
 
@@ -85,208 +69,65 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 
 	Bitmap originImage = null;
 
-	// The 3 states (events) which the user is trying to perform
-	static final int NONE = 0;
-	static final int DRAG = 1;
-	static final int ZOOM = 2;
-	int mode = NONE;
+	private GestureDetector mGestureDetector;
+	private ScaleGestureDetector mScaleGestureDetector;
 
-	// these PointF objects are used to record the point(s) the user is touching
-	PointF start = new PointF();
-	PointF mid = new PointF();
-	float oldDist = 1f;
+	private static final int SWIPE_MIN_DISTANCE = 120;
+    private static final int SWIPE_MAX_OFF_PATH = 250;
+    private static final int SWIPE_THRESHOLD_VELOCITY = 1000;
+    
+    private static Display sDisplay;
+    
+	Matrix mMatrix = new Matrix();
+	
 
+	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		//layout
+		
 		final Bundle extras = getIntent().getExtras();
 		mImslp = extras.getString("imslp");
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		setContentView(R.layout.viewer);
+		setContentView(R.layout.gesture_layout);
 
 		//Find the dir to save cached images
 		imslpDir = new File(Environment.getExternalStorageDirectory(),"Classico/" + mImslp);			
 		if(!imslpDir.exists()) {
 			imslpDir.mkdirs();
 		}
+		
+		sDisplay = ((WindowManager)
+				getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
 
-		mFrameLayout = (FrameLayout) findViewById(R.id.mainLayout);
+		mGestureDetector = new GestureDetector(this, new GestureListener(), null, true);
+		mScaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
+
 		mImageView = (ImageView) findViewById(R.id.image_view);
-
-		//cache
-		//cacheOffset = 0;
+		
+		//cache init
 		cache = new HashMap<Integer, Bitmap>();
 		currentPageNumber = 1;
 		//start fill cache
-		//doBindService();
 		setBitmap2();
-		//		cacheTask = new FillCacheTask();
-		//		cacheTask.execute();
-
-		//navigation
-		mZoomControls = (ZoomControls) findViewById(R.id.zoomControls);
-		mZoomControls.setOnZoomInClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				mImageView.setScaleType(ImageView.ScaleType.MATRIX);
-				matrix.set(mImageView.getImageMatrix());
-				matrix.postScale(1.5f, 1.5f);
-				mImageView.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
-			}
-		});
-
-		mZoomControls.setOnZoomOutClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				mImageView.setScaleType(ImageView.ScaleType.MATRIX);
-				matrix.set(mImageView.getImageMatrix());
-				matrix.postScale(0.5f, 0.5f);				
-				mImageView.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
-
-			}
-		});
-
-		mImageView.setOnTouchListener(this);
-
-		mNext = (ImageButton) findViewById(R.id.next);
-		mPrev = (ImageButton) findViewById(R.id.prev);
-
-		mFadeOutAnimation = AnimationUtils.loadAnimation(this, R.anim.fade_out);		
-
-		mFadeOutAnimation.setFillAfter(true);
-		mFadeOutAnimation.setFillEnabled(true);
-		mFadeOutAnimation.setAnimationListener(this);
-
-		//		mNext.startAnimation(mFadeOutAnimation);		
-		//		mPrev.startAnimation(mFadeOutAnimation);
-		//		mZoomControls.startAnimation(mFadeOutAnimation);
-		controllNavigationAnimation();
-
-	}
-
-	private void controllNavigationAnimation() {	
-		Log.d(TAG, "controllNavigationAnimation");
-		mZoomControls.clearAnimation();
-		if (currentPageNumber == 0) {
-			mNext.clearAnimation();					
-			mNext.startAnimation(mFadeOutAnimation);
-			mPrev.startAnimation(mFadeOutAnimation);
-		} else if (currentPageNumber == lastPageNumber) {
-			mPrev.clearAnimation();
-			mPrev.startAnimation(mFadeOutAnimation);
-			//mNext.startAnimation(mFadeOutAnimation);
-		} else {
-			mNext.clearAnimation();		
-			mPrev.clearAnimation();
-			mNext.startAnimation(mFadeOutAnimation);
-			mPrev.startAnimation(mFadeOutAnimation);
-		}
-		mZoomControls.startAnimation(mFadeOutAnimation);		
 	}
 
 	@Override
-	public boolean onTouch(View v, MotionEvent event) {
-		Log.w(TAG, "onTouch(): " + v.toString());
-
-		ImageView view = (ImageView) v;
-		view.setScaleType(ImageView.ScaleType.MATRIX);
-		float scale;
-
+	public boolean onTouchEvent(MotionEvent event) {
 		if (mFirstTouch) {
-			view.getImageMatrix().getValues(mOriginMatrixValues);
+			mImageView.getImageMatrix().getValues(mOriginMatrixValues);
 			mFirstTouch = false;
 		}
-
-		// all touch events are handled through this switch statement
-		switch (event.getAction() & MotionEvent.ACTION_MASK) {
-
-
-		case MotionEvent.ACTION_DOWN: //first finger down only
-			savedMatrix.set(view.getImageMatrix());
-			start.set(event.getX(), event.getY());
-			Log.d(TAG, "mode=DRAG" ); //write to LogCat
-			mode = DRAG;
-
-
-			//			mNext.clearAnimation();		
-			//			mPrev.clearAnimation();
-			//			mZoomControls.clearAnimation();
-			//			mNext.startAnimation(mFadeOutAnimation);
-			//			mPrev.startAnimation(mFadeOutAnimation);
-			//			mZoomControls.startAnimation(mFadeOutAnimation);
-			break;
-		case MotionEvent.ACTION_UP: //first finger lifted
-		case MotionEvent.ACTION_POINTER_UP: //second finger lifted
-			mode = NONE;
-			Log.d(TAG, "mode=NONE" );
-			controllNavigationAnimation();
-			break;
-
-		case MotionEvent.ACTION_POINTER_DOWN: //first and second finger down
-			oldDist = spacing(event);
-			Log.d(TAG, "oldDist=" + oldDist);
-			if (oldDist > 5f) {
-				savedMatrix.set(view.getImageMatrix());
-				//savedMatrix.set(matrix);
-				midPoint(mid, event);
-				mode = ZOOM;
-				Log.d(TAG, "mode=ZOOM" );
-			}
-			break;
-
-		case MotionEvent.ACTION_MOVE:
-
-			if (mode == DRAG) { //movement of first finger
-				Log.d(TAG, "mode=DRAG => DRAG");
-
-				matrix.set(savedMatrix);
-				matrix.postTranslate(event.getX() - start.x, event.getY() - start.y); //create the transformation in the matrix of points
-			}
-			else if (mode == ZOOM) { //pinch zooming
-				float newDist = spacing(event);
-				//Log.d(TAG, "newDist=" + newDist);
-				if (newDist > 5f) {
-					matrix.set(savedMatrix);
-
-					scale = newDist / oldDist; //setting the scaling of the matrix...if scale > 1 means zoom in...if scale < 1 means zoom out
-					matrix.postScale(scale, scale, mid.x, mid.y);
-				}
-			}
-
-			view.setImageMatrix(correctBorder(matrix)); // display the transformation on screen
-			break;
-		}
-		return true; // indicate event was handled
-	} 
-
-	private float spacing(MotionEvent event) {
-		float x = event.getX(0) - event.getX(1);
-		float y = event.getY(0) - event.getY(1);
-		return FloatMath.sqrt(x * x + y * y);
+		
+		mScaleGestureDetector.onTouchEvent(event);
+		if (!mScaleGestureDetector.isInProgress()) mGestureDetector.onTouchEvent(event);
+		
+		mImageView.setImageMatrix(correctBorder(mImageView.getImageMatrix()));
+		return true;
 	}
 
-	private void midPoint(PointF point, MotionEvent event) {
-		float x = event.getX(0) + event.getX(1);
-		float y = event.getY(0) + event.getY(1);
-		point.set(x / 2, y / 2);
-	}
-
-	/**
-	 * don't let the image scroll over visibly range
-	 * 
-	 * @param matrix
-	 * @return
-	 */
-	private Matrix correctBorder(Matrix matrix) {
+	private Matrix correctBorder(final Matrix matrix) {
 		matrix.getValues(mCurrentMatrixValues);
-
-		//		Log.w(TAG, mCurrentMatrixValues[0] + " " + mCurrentMatrixValues[1] + " " + mCurrentMatrixValues[2] + " " +
-		//				mCurrentMatrixValues[3] + " " + mCurrentMatrixValues[4] + " " + mCurrentMatrixValues[5] + " " +
-		//				mCurrentMatrixValues[6] + " " + mCurrentMatrixValues[7] + " " + mCurrentMatrixValues[8]);
 
 		if (mCurrentMatrixValues[0] < mOriginMatrixValues[0]) {
 			mCurrentMatrixValues[0] = mOriginMatrixValues[0];
@@ -296,8 +137,8 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			mCurrentMatrixValues[4] = 1.0f;
 		}
 
-		final float y = (mFrameLayout.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
-		final float x = (mFrameLayout.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
+		final float y = (sDisplay.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
+		final float x = (sDisplay.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
 
 		if (x < 0) {
 			if (mCurrentMatrixValues[2] > 0) {
@@ -324,24 +165,58 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		return matrix;
 	}
 
-	public void next(View v) {
-		Log.d(TAG, "Next pressed");
-		if (currentPageNumber == lastPageNumber) {
-			return;
+
+	private class GestureListener extends SimpleOnGestureListener {
+
+		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+			try {
+				if (Math.abs(e1.getY() - e2.getY()) > SWIPE_MAX_OFF_PATH)
+					return false;
+				// right to left swipe
+				if(e1.getX() - e2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+					if (currentPageNumber == lastPageNumber) {
+						return false;
+					}
+					currentPageNumber++;
+					setBitmap2();
+				}  else if (e2.getX() - e1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+					if (currentPageNumber == 1) {
+						return false;
+					}
+					currentPageNumber--;
+					setBitmap2();
+				}
+			} catch (Exception e) {
+				// nothing
+			}
+			return false;
 		}
-		currentPageNumber++;
-		setBitmap2();
+
+		@Override
+		public boolean onScroll(MotionEvent e1, MotionEvent e2,
+				float distanceX, float distanceY) {
+			Log.d(TAG, "onScroll");
+			mMatrix.set(mImageView.getImageMatrix());
+			mMatrix.postTranslate(-distanceX, -distanceY);
+			mImageView.setImageMatrix(mMatrix);
+
+			return super.onScroll(e1, e2, distanceX, distanceY);
+		}
 	}
 
-	public void prev(View v) {
-		Log.d(TAG, "Prev pressed");
-		if (currentPageNumber == 1) {
-			return;
-		}
-		currentPageNumber--;
-		setBitmap2();
-	}
+	private class ScaleListener extends SimpleOnScaleGestureListener {
+		@Override
+		public boolean onScale(ScaleGestureDetector detector) {
+			mImageView.setScaleType(ImageView.ScaleType.MATRIX);
+			mMatrix.set(mImageView.getImageMatrix());
+			mMatrix.postScale(detector.getScaleFactor(), detector.getScaleFactor());
+			mImageView.setImageMatrix(mMatrix);
+			Log.d(TAG, "onScale with factor " + detector.getScaleFactor());
 
+			return super.onScale(detector);
+		}
+	}
+	
 	private class FillCacheTask extends AsyncTask<Integer, Boolean, Boolean> {
 		@Override
 		protected void onPreExecute() {
@@ -394,7 +269,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		protected void onProgressUpdate(Boolean... values) {
 			super.onProgressUpdate(values);
 			if (values[0]) {
-				mDialog = ProgressDialog.show(PartitureViewer.this, "", 
+				mDialog = ProgressDialog.show(GestureActivity.this, "", 
 						"Loading. Please wait...", true);
 			} else {
 				mDialog.dismiss();
@@ -418,24 +293,6 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 				taskRunned = false;
 			}
 		}
-	}
-
-	@Override
-	public void onAnimationEnd(Animation animation) {
-		mNext.setVisibility(View.GONE);
-		mPrev.setVisibility(View.GONE);		
-	}
-
-	@Override
-	public void onAnimationRepeat(Animation animation) {
-		// TODO Auto-generated method stub		
-	}
-
-	@Override
-	public void onAnimationStart(Animation animation) {
-		mNext.setVisibility(View.VISIBLE);
-		mPrev.setVisibility(View.VISIBLE);
-
 	}
 
 	private String getPageLink(final int pageNumber) {
@@ -521,13 +378,14 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 		//		if (mOriginBitmap != null) {
 		//			mOriginBitmap.recycle();
 		//		}
+		Log.d(TAG, "pixels=" + bitmap.getRowBytes());
 		mOriginBitmap = bitmap;
 		mBitmapHeight = mOriginBitmap.getHeight();
 		mBitmapWidth = mOriginBitmap.getWidth();
-		mImageView.setImageBitmap(mOriginBitmap);	
+		mImageView.setImageBitmap(bitmap);	
 		mImageView.setScaleType(ScaleType.FIT_CENTER);
 
-		mFirstTouch = true;		
+		mFirstTouch = true;
 	}
 
 	private void setBitmap2() {
@@ -535,7 +393,7 @@ public class PartitureViewer extends Activity implements OnTouchListener, Animat
 			setBitmap(cache.get(currentPageNumber));
 		} 
 		if (!taskRunned) {
-			mDialog = ProgressDialog.show(PartitureViewer.this, "", 
+			mDialog = ProgressDialog.show(GestureActivity.this, "", 
 					"Loading. Please wait...", true);
 			new FillCacheTask().execute(currentPageNumber);
 		} else {

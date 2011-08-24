@@ -23,4 +23,6 @@
     <string name="menu_exit">Exit</string>
     <string name="menu_search">Search</string>
     
+    <string name="no_scores">no scores founded</string>
+    
 </resources>

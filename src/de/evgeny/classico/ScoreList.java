@@ -1,6 +1,6 @@
 package de.evgeny.classico;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -9,13 +9,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
-public class ScoreList extends Activity {
+public class ScoreList extends ListActivity {
 
 	private final static String TAG = ScoreList.class.getSimpleName();
-	private ListView mListView;
 	private int mCompositionId;
 	private Cursor imslpCursor;
 
@@ -23,9 +21,7 @@ public class ScoreList extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.d(TAG, "onCreate()");
-		
-		setContentView(R.layout.scores_layout);
-		mListView = (ListView) findViewById(R.id.score_list);
+		setContentView(R.layout.scores);
 		
 		Uri uri = getIntent().getData();
 		Log.d(TAG, "uri=" + uri);
@@ -46,31 +42,31 @@ public class ScoreList extends Activity {
 		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
 		imslpCursor = managedQuery(data, null, null, null, null);
 		
-		Log.d(TAG, "1");
+		if(imslpCursor == null) {
+			Log.d(TAG, "nothing founded");
+		}
+		
 		String[] from = new String[] { "imslp", "meta" };
 
 		int[] to = new int[] { R.id.composer,
 				R.id.composition };
 		Log.d(TAG, "2");
 		// Create a simple cursor adapter for the definitions and apply them to the ListView
-		SimpleCursorAdapter scores = new SimpleCursorAdapter(this,
+		SimpleCursorAdapter scoresAdapter = new SimpleCursorAdapter(this,
 				R.layout.result, imslpCursor, from, to);
 		Log.d(TAG, "set imslp adapter");
-		mListView.setAdapter(scores);
+		setListAdapter(scoresAdapter);
+		//mListView.setAdapter(scores);
 
 		// Define the on-click listener for the list items
-		mListView.setOnItemClickListener(new OnItemClickListener() {
+		getListView().setOnItemClickListener(new OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				imslpCursor.moveToPosition(position);
-				final Intent partitureViewerIntent = new Intent(getApplicationContext(), PartitureViewer.class);
+//				final Intent partitureViewerIntent = new Intent(getApplicationContext(), PartitureViewer.class);
+				final Intent partitureViewerIntent = new Intent(getApplicationContext(), GestureActivity.class);
 				partitureViewerIntent.putExtra("imslp", imslpCursor.getString(imslpCursor.getColumnIndex("imslp")));
 				startActivity(partitureViewerIntent);
 			}
 		});
-	}
-	
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
 	}
 }
