@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -55,7 +56,7 @@ public class GestureActivity extends Activity {
 
 	private boolean mFirstTouch = true;
 
-	public HashMap<Integer, Bitmap> cache;
+	public HashMap<Integer, SoftReference<Bitmap>> cache;
 	private final int cacheSize = 4; //use even numbers
 	private int currentPageNumber;
 	private int lastPageNumber = 1000; //bad decision, but it's work
@@ -106,10 +107,10 @@ public class GestureActivity extends Activity {
 		mImageView = (ImageView) findViewById(R.id.image_view);
 		
 		//cache init
-		cache = new HashMap<Integer, Bitmap>();
+		cache = new HashMap<Integer, SoftReference<Bitmap>>();
 		currentPageNumber = 1;
 		//start fill cache
-		setBitmap2();
+		getBitmap();
 	}
 
 	@Override
@@ -172,19 +173,20 @@ public class GestureActivity extends Activity {
 			try {
 				if (Math.abs(e1.getY() - e2.getY()) > SWIPE_MAX_OFF_PATH)
 					return false;
+				Log.d(TAG, "onFling(): ");
 				// right to left swipe
 				if(e1.getX() - e2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
 					if (currentPageNumber == lastPageNumber) {
 						return false;
 					}
 					currentPageNumber++;
-					setBitmap2();
+					getBitmap();
 				}  else if (e2.getX() - e1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
 					if (currentPageNumber == 1) {
 						return false;
 					}
 					currentPageNumber--;
-					setBitmap2();
+					getBitmap();
 				}
 			} catch (Exception e) {
 				// nothing
@@ -195,7 +197,6 @@ public class GestureActivity extends Activity {
 		@Override
 		public boolean onScroll(MotionEvent e1, MotionEvent e2,
 				float distanceX, float distanceY) {
-			Log.d(TAG, "onScroll");
 			mMatrix.set(mImageView.getImageMatrix());
 			mMatrix.postTranslate(-distanceX, -distanceY);
 			mImageView.setImageMatrix(mMatrix);
@@ -211,8 +212,6 @@ public class GestureActivity extends Activity {
 			mMatrix.set(mImageView.getImageMatrix());
 			mMatrix.postScale(detector.getScaleFactor(), detector.getScaleFactor());
 			mImageView.setImageMatrix(mMatrix);
-			Log.d(TAG, "onScale with factor " + detector.getScaleFactor());
-
 			return super.onScale(detector);
 		}
 	}
@@ -276,7 +275,7 @@ public class GestureActivity extends Activity {
 				Log.d(TAG, "pages in cache " + cache.size());
 				Log.d(TAG, "show page number " + currentPageNumber);
 				if(isBitmapInCache(currentPageNumber)) {
-					setBitmap(cache.get(currentPageNumber));
+					setBitmap(cache.get(currentPageNumber).get());
 				} else {
 					Log.e(TAG, "Unknown error: ");
 				}
@@ -306,7 +305,7 @@ public class GestureActivity extends Activity {
 
 	private void saveToCache(final Bitmap bitmap, final int pageNumber) {
 		Log.d(TAG, "save page " + pageNumber + " to cache");
-		cache.put(pageNumber, bitmap);
+		cache.put(pageNumber, new SoftReference<Bitmap>(bitmap));
 	}
 
 	private void saveToFile(final Bitmap bitmap, final int pageNumber) {
@@ -328,6 +327,7 @@ public class GestureActivity extends Activity {
 			URL url = new URL(getPageLink(pageNumber));
 
 			URLConnection ucon = url.openConnection();
+			ucon.setUseCaches(true);
 			InputStream is = ucon.getInputStream();
 			BufferedInputStream bis = new BufferedInputStream(is);
 
@@ -344,6 +344,7 @@ public class GestureActivity extends Activity {
 
 			final Bitmap bitmap = 
 				BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
+			
 			saveToFile(bitmap, pageNumber);
 			return true;
 		} catch (IOException e) {
@@ -370,15 +371,10 @@ public class GestureActivity extends Activity {
 	}
 
 	private boolean isBitmapInCache(final int pageNumber) {
-		Log.d(TAG, "isBitmapInCache " + pageNumber);
-		return cache.containsKey(pageNumber);
+		return (cache.containsKey(pageNumber) && (cache.get(pageNumber).get() != null));
 	}
 
 	private void setBitmap(final Bitmap bitmap) {
-		//		if (mOriginBitmap != null) {
-		//			mOriginBitmap.recycle();
-		//		}
-		Log.d(TAG, "pixels=" + bitmap.getRowBytes());
 		mOriginBitmap = bitmap;
 		mBitmapHeight = mOriginBitmap.getHeight();
 		mBitmapWidth = mOriginBitmap.getWidth();
@@ -388,15 +384,21 @@ public class GestureActivity extends Activity {
 		mFirstTouch = true;
 	}
 
-	private void setBitmap2() {
+	private void getBitmap() {
 		if (isBitmapInCache(currentPageNumber)) {
-			setBitmap(cache.get(currentPageNumber));
+			Log.d(TAG, "bitmap " + currentPageNumber + " is in cache");
+			setBitmap(cache.get(currentPageNumber).get());
+			return;
 		} 
 		if (!taskRunned) {
+			Log.d(TAG, "bitmap " + currentPageNumber + " not in cache, " +
+					"start asynctask");
 			mDialog = ProgressDialog.show(GestureActivity.this, "", 
 					"Loading. Please wait...", true);
 			new FillCacheTask().execute(currentPageNumber);
 		} else {
+			Log.d(TAG, "bitmap " + currentPageNumber + " not in cache, " +
+			"asynctask will be restarted");
 			restartTask = true;
 		}
 	}
