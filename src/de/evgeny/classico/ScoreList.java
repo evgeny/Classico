@@ -1,27 +1,41 @@
 package de.evgeny.classico;
 
-import android.app.ListActivity;
+import java.io.File;
+
+import greendroid.app.GDActivity;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
-public class ScoreList extends ListActivity {
+public class ScoreList extends GDActivity {
 
 	private final static String TAG = ScoreList.class.getSimpleName();
 	private int mCompositionId;
 	private Cursor imslpCursor;
+	private ListView mListView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.d(TAG, "onCreate()");
-		setContentView(R.layout.scores);
+		//setContentView(R.layout.scores);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		setActionBarContentView(R.layout.scores);
+		
+		//addActionBarItem(Type.Search, R.id.action_bar_search);
+		mListView = (ListView) findViewById(android.R.id.list);
+		mListView.setEmptyView(findViewById(android.R.id.empty));
 		
 		Uri uri = getIntent().getData();
 		Log.d(TAG, "uri=" + uri);
@@ -41,28 +55,23 @@ public class ScoreList extends ListActivity {
 		
 		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
 		imslpCursor = managedQuery(data, null, null, null, null);
-		
-		if(imslpCursor == null) {
-			Log.d(TAG, "nothing founded");
-		}
-		
+		Log.d(TAG, "cursor gained");
 		String[] from = new String[] { "imslp", "meta" };
 
 		int[] to = new int[] { R.id.composer,
 				R.id.composition };
-		Log.d(TAG, "2");
+
 		// Create a simple cursor adapter for the definitions and apply them to the ListView
 		SimpleCursorAdapter scoresAdapter = new SimpleCursorAdapter(this,
 				R.layout.result, imslpCursor, from, to);
 		Log.d(TAG, "set imslp adapter");
-		setListAdapter(scoresAdapter);
-		//mListView.setAdapter(scores);
+		mListView.setAdapter(scoresAdapter);
+				
 
 		// Define the on-click listener for the list items
-		getListView().setOnItemClickListener(new OnItemClickListener() {
+		mListView.setOnItemClickListener(new OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 				imslpCursor.moveToPosition(position);
-//				final Intent partitureViewerIntent = new Intent(getApplicationContext(), PartitureViewer.class);
 				final Intent partitureViewerIntent = new Intent(getApplicationContext(), GestureActivity.class);
 				partitureViewerIntent.putExtra("imslp", imslpCursor.getString(imslpCursor.getColumnIndex("imslp")));
 				startActivity(partitureViewerIntent);

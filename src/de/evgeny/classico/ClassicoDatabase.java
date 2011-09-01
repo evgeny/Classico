@@ -10,7 +10,7 @@ import android.provider.BaseColumns;
 
 public class ClassicoDatabase {
 
-	private final static String TAG = ClassicoDatabase.class.getSimpleName();
+	//private final static String TAG = ClassicoDatabase.class.getSimpleName();
 
 	public static final String KEY_COMPOSER = SearchManager.SUGGEST_COLUMN_TEXT_1;
 	public static final String KEY_COMPOSITION = SearchManager.SUGGEST_COLUMN_TEXT_2;
@@ -57,8 +57,7 @@ public class ClassicoDatabase {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
 		builder.setTables(table);
 		Cursor cursor = builder.query(mClassicoDatabase,
-				columns, selection, selectionArgs, null, null, null);
-				//columns, selection, selectionArgs, null, null, KEY_COMPOSITION_ID + " ASC LIMIT 20");				
+				columns, selection, selectionArgs, null, null, null);		
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {

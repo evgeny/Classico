@@ -161,6 +161,7 @@ public class ComposerProvider extends ContentProvider {
 	}
 	
 	private Cursor getScore(Uri uri) {
+		Log.d(TAG, "getScore");
 		String compId = uri.getLastPathSegment();
 		final String[] columns = new String[]{"_id", "imslp", "meta"};
 		final String selection = "comp_id=?";

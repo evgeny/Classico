@@ -3,12 +3,16 @@ package de.evgeny.classico;
 import greendroid.app.GDActivity;
 import greendroid.widget.ActionBarItem;
 import greendroid.widget.ActionBarItem.Type;
+
+import java.io.File;
+
+import android.app.Dialog;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Html;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -17,15 +21,13 @@ import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class MainActivity extends GDActivity {
 	private final static String TAG = MainActivity.class.getSimpleName();
-
-	//	public static final int LOAD_DATA_START = 0;
-	//	public static final int LOAD_DATA_FINISH = 1;
 
 	private TextView mTextView;
 	private ListView mListView;
@@ -35,19 +37,40 @@ public class MainActivity extends GDActivity {
 		super.onCreate(savedInstanceState);
 
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		//setContentView(R.layout.main);
 		setActionBarContentView(R.layout.main);
 		
 		addActionBarItem(Type.Search, R.id.action_bar_search);
 
-		Log.d(TAG, "onCreate(): ");	
-		//requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		//setContentView(R.layout.main);	
+		Log.d(TAG, "onCreate(): ");		
 
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list_titles);
+		
+		//check if database exist
+		File dir = new File(Environment.getExternalStorageDirectory(),"Classico/");
+		File db = new File(dir, "classico.db");
+		//if (!db.exists() || db.canRead()) {
+			Dialog dialog = createDialog();
+			dialog.show();
+		//}
 
 		onNewIntent(getIntent());		
+	}
+	
+	private Dialog createDialog() {
+		Dialog dialog = new Dialog(this);
+
+		dialog.setContentView(R.layout.database_dialog);
+		dialog.setTitle("Database download");
+
+		TextView text = (TextView) dialog.findViewById(R.id.d_database_text);
+		text.setText("To use this application offline, you should download the database");
+		ImageView image = (ImageView) dialog.findViewById(R.id.d_database_image);
+		image.setImageResource(R.drawable.imslp);
+		
+		dialog.setCancelable(false);
+		
+		return dialog;
 	}
 
 	@Override
@@ -113,14 +136,13 @@ public class MainActivity extends GDActivity {
 					R.id.composition };
 
 			// Create a simple cursor adapter for the definitions and apply them to the ListView
-			SimpleCursorAdapter words = new SimpleCursorAdapter(this,
+			SimpleCursorAdapter titleAdapter = new SimpleCursorAdapter(this,
 					R.layout.result, cursor, from, to);
-			mListView.setAdapter(words);
+			mListView.setAdapter(titleAdapter);
 
 			// Define the on-click listener for the list items
 			mListView.setOnItemClickListener(new OnItemClickListener() {
-				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-					// Build the Intent used to open WordActivity with a specific word Uri					
+				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {				
 					final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);	
 					Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
 							String.valueOf(id));

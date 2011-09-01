@@ -32,7 +32,7 @@
                   android:theme="@android:style/Theme.NoTitleBar" />
                   
         <activity android:name=".ScoreList"
-                  android:theme="@android:style/Theme.NoTitleBar" />
+                  android:theme="@style/Theme.GreenDroid"/>
 
 		 <provider android:name=".ComposerProvider"
                    android:authorities="de.evgeny.classico.composerprovider"/>

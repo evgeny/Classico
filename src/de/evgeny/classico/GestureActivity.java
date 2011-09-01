@@ -1,6 +1,5 @@
 package de.evgeny.classico;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import org.apache.http.util.ByteArrayBuffer;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -44,7 +42,7 @@ public class GestureActivity extends Activity {
 	
 	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
 	private String mImslp;
-	private Dialog mDialog;
+	private ProgressDialog mDialog;
 	private boolean restartTask = false;
 	private boolean taskRunned = false;
 
@@ -92,6 +90,10 @@ public class GestureActivity extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.gesture_layout);
 
+		mDialog = new ProgressDialog(getApplicationContext());
+		mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+		mDialog.setMessage("Loading...");
+		mDialog.setCancelable(false);
 		//Find the dir to save cached images
 		imslpDir = new File(Environment.getExternalStorageDirectory(),"Classico/" + mImslp);			
 		if(!imslpDir.exists()) {
@@ -268,8 +270,9 @@ public class GestureActivity extends Activity {
 		protected void onProgressUpdate(Boolean... values) {
 			super.onProgressUpdate(values);
 			if (values[0]) {
-				mDialog = ProgressDialog.show(GestureActivity.this, "", 
-						"Loading. Please wait...", true);
+//				mDialog = ProgressDialog.show(GestureActivity.this, "", 
+//						"Loading. Please wait...", true);
+				mDialog.show();
 			} else {
 				mDialog.dismiss();
 				Log.d(TAG, "pages in cache " + cache.size());
@@ -328,23 +331,25 @@ public class GestureActivity extends Activity {
 
 			URLConnection ucon = url.openConnection();
 			ucon.setUseCaches(true);
+			final int fileLength = ucon.getContentLength();
 			InputStream is = ucon.getInputStream();
-			BufferedInputStream bis = new BufferedInputStream(is);
 
-			ByteArrayBuffer baf = new ByteArrayBuffer(50);
-			int current = 0;
-			while ((current = bis.read()) != -1) {
-				baf.append((byte) current);
-			}					
-
-			bis.close();
 			if (TextUtils.equals(ucon.getURL().getPath(), "/Noimage.svg")) {
 				return false;
 			}
-
-			final Bitmap bitmap = 
-				BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
-			
+            byte[] buffer = new byte[8192];
+            int bufferLength = 0;
+            int downloadedSize = 0;
+            
+			ByteArrayBuffer baf = new ByteArrayBuffer(50);
+            while ((bufferLength = is.read(buffer)) > 0) {
+            	baf.append(buffer, 0, bufferLength);
+                downloadedSize += bufferLength;
+                mDialog.setProgress((int)(downloadedSize/fileLength*100));
+                //helper.progressUpdate((int)(downloadedSize/totalSize*100));
+            }
+			//final Bitmap bitmap = BitmapFactory.decodeStream(is);
+            final Bitmap bitmap = BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
 			saveToFile(bitmap, pageNumber);
 			return true;
 		} catch (IOException e) {
