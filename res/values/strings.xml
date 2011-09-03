@@ -25,4 +25,7 @@
     
     <string name="no_scores">no scores founded</string>
     
+    <!-- donwload dialog -->
+    <string name="download_dialog_text">To use this application offline, you must download the database</string>
+    
 </resources>

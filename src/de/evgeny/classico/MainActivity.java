@@ -8,6 +8,7 @@ import java.io.File;
 
 import android.app.Dialog;
 import android.app.SearchManager;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -18,9 +19,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
@@ -49,30 +52,21 @@ public class MainActivity extends GDActivity {
 		//check if database exist
 		File dir = new File(Environment.getExternalStorageDirectory(),"Classico/");
 		File db = new File(dir, "classico.db");
-		//if (!db.exists() || db.canRead()) {
-			Dialog dialog = createDialog();
-			dialog.show();
-		//}
-
+		if (!db.exists() || db.canRead()) {
+			new DownloadDialog(this).show();
+		}
+		
 		onNewIntent(getIntent());		
 	}
 	
-	private Dialog createDialog() {
-		Dialog dialog = new Dialog(this);
-
-		dialog.setContentView(R.layout.database_dialog);
-		dialog.setTitle("Database download");
-
-		TextView text = (TextView) dialog.findViewById(R.id.d_database_text);
-		text.setText("To use this application offline, you should download the database");
-		ImageView image = (ImageView) dialog.findViewById(R.id.d_database_image);
-		image.setImageResource(R.drawable.imslp);
-		
-		dialog.setCancelable(false);
-		
-		return dialog;
+	public void onCancelClick(View view) {
+		Log.d(TAG, "onCancelClick(): ");
 	}
-
+	
+	public void onOkPressedClick(View v) {
+		Log.d(TAG, "onOkClick(): ");
+	}
+ 
 	@Override
 	protected void onNewIntent(final Intent intent) {
 		super.onNewIntent(intent);
@@ -171,6 +165,39 @@ public class MainActivity extends GDActivity {
 			return true;
 		default:
 			return false;
+		}
+	}
+	
+	private class DownloadDialog extends Dialog implements OnClickListener {
+		
+		private Button cancelButton;
+		private Button okButton;
+
+		public DownloadDialog(Context context) {
+			super(context);
+			
+			requestWindowFeature(Window.FEATURE_NO_TITLE);
+			setContentView(R.layout.database_dialog);
+			
+			cancelButton = (Button) findViewById(R.id.d_database_ok);
+			okButton = (Button) findViewById(R.id.d_database_cancel);
+			
+			cancelButton.setOnClickListener(this);
+			okButton.setOnClickListener(this);
+		}
+
+		@Override
+		public void onClick(View v) {
+			switch (v.getId()) {
+			case R.id.d_database_cancel:
+				this.dismiss();
+				break;
+			case R.id.d_database_ok:
+				//TODO download the database
+				break;
+			default:
+				break;
+			}
 		}
 	}
 }

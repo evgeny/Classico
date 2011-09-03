@@ -15,11 +15,13 @@
 	               android:layout_width="wrap_content"
 	               android:layout_height="fill_parent"
 	               android:layout_marginRight="10dp"
+	               android:src="@drawable/imslp"
 	               />
 	    <TextView android:id="@+id/d_database_text"
 	              android:layout_width="wrap_content"
 	              android:layout_height="fill_parent"
 	              android:textColor="#FFF"
+	              android:text="@string/download_dialog_text"
 	              />
     </LinearLayout>
     <LinearLayout android:id="@+id/layout_second"
