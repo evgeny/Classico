@@ -1,6 +1,8 @@
 package de.evgeny.classico;
 
+import greendroid.app.ActionBarActivity;
 import greendroid.app.GDActivity;
+import greendroid.widget.ActionBar;
 import greendroid.widget.ActionBarItem;
 import greendroid.widget.ActionBarItem.Type;
 
@@ -24,7 +26,6 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -35,11 +36,14 @@ public class MainActivity extends GDActivity {
 	private TextView mTextView;
 	private ListView mListView;
 
+	public MainActivity() {
+		super(ActionBar.Type.Normal);
+	}
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setActionBarContentView(R.layout.main);
 		
 		addActionBarItem(Type.Search, R.id.action_bar_search);
@@ -77,6 +81,7 @@ public class MainActivity extends GDActivity {
 			// handles a click on a search suggestion; launches activity to show composition			
 			final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
 			scoreIntent.setData(intent.getData());
+			scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
 			startActivity(scoreIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
@@ -141,6 +146,7 @@ public class MainActivity extends GDActivity {
 					Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
 							String.valueOf(id));
 					scoreIntent.setData(data);
+					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
 					startActivity(scoreIntent);
 				}
 			});

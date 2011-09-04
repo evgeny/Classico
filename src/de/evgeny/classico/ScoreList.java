@@ -1,15 +1,10 @@
 package de.evgeny.classico;
 
-import java.io.File;
-
 import greendroid.app.GDActivity;
-import android.app.Dialog;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -32,7 +27,7 @@ public class ScoreList extends GDActivity {
 		//setContentView(R.layout.scores);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setActionBarContentView(R.layout.scores);
-		
+
 		//addActionBarItem(Type.Search, R.id.action_bar_search);
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
