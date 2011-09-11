@@ -1,6 +1,8 @@
 package de.evgeny.classico;
 
 import greendroid.app.GDActivity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -24,16 +26,17 @@ public class ScoreList extends GDActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.d(TAG, "onCreate()");
-		//setContentView(R.layout.scores);
+		
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setActionBarContentView(R.layout.scores);
 
-		//addActionBarItem(Type.Search, R.id.action_bar_search);
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 		
 		Uri uri = getIntent().getData();
 		Log.d(TAG, "uri=" + uri);
+		Dialog dialog = ProgressDialog.show(ScoreList.this, "", 
+				"Query database. Please wait...", true);
 		final Cursor cursor = managedQuery(uri, null, null, null, null);
 		
 		if(cursor == null) {
@@ -50,7 +53,7 @@ public class ScoreList extends GDActivity {
 		
 		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
 		imslpCursor = managedQuery(data, null, null, null, null);
-		Log.d(TAG, "cursor gained");
+		
 		String[] from = new String[] { "imslp", "meta" };
 
 		int[] to = new int[] { R.id.composer,
@@ -62,7 +65,7 @@ public class ScoreList extends GDActivity {
 		Log.d(TAG, "set imslp adapter");
 		mListView.setAdapter(scoresAdapter);
 				
-
+		dialog.dismiss();
 		// Define the on-click listener for the list items
 		mListView.setOnItemClickListener(new OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {

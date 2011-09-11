@@ -33,12 +33,13 @@
                   android:theme="@android:style/Theme.NoTitleBar" />
                   
         <activity android:name=".ScoreList"
-                  android:theme="@style/Theme.GreenDroid"/>
+                  android:theme="@style/Theme.GreenDroid.NoTitleBar"/>
 
 		 <provider android:name=".ComposerProvider"
                    android:authorities="de.evgeny.classico.composerprovider"/>
                    
-         <activity android:name=".GestureActivity" />
+         <activity android:name=".GestureActivity" 
+                    android:theme="@android:style/Theme.NoTitleBar" />
                                     
                         
     </application>

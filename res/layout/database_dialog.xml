@@ -3,46 +3,35 @@
               android:orientation="vertical"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
-              android:padding="10dp"
-              >
-    <LinearLayout android:id="@+id/layout_first"
-                  android:orientation="horizontal"
-                  android:layout_width="fill_parent"
-                  android:layout_height="0px"
-                  android:layout_weight="1"
-                  >              
-	    <ImageView android:id="@+id/d_database_image"
-	               android:layout_width="wrap_content"
-	               android:layout_height="fill_parent"
-	               android:layout_marginRight="10dp"
-	               android:src="@drawable/imslp"
-	               />
-	    <TextView android:id="@+id/d_database_text"
-	              android:layout_width="wrap_content"
-	              android:layout_height="fill_parent"
-	              android:textColor="#FFF"
-	              android:text="@string/download_dialog_text"
-	              />
-    </LinearLayout>
-    <LinearLayout android:id="@+id/layout_second"
-                  android:orientation="horizontal"
-                  android:layout_width="fill_parent"
-                  android:layout_height="0px"
-                  android:layout_weight="1"
-                  android:paddingTop="30px"
-                  >
+              android:padding="10dp" >
+
+	<TextView android:id="@+id/d_database_text"
+	          android:layout_width="wrap_content"
+	          android:layout_height="fill_parent"
+	          android:textColor="#FFF"
+	          android:text="@string/download_dialog_text"
+	          android:drawableLeft="@drawable/imslp"
+	          android:drawablePadding="20px"/>
+	          
+	<LinearLayout android:id="@+id/layout_second"
+	              android:orientation="horizontal"
+	              android:layout_width="fill_parent"
+	              android:layout_height="0px"
+	              android:layout_weight="1"
+                  android:paddingTop="30px" >
                   
-        <Button android:id="@+id/d_database_ok"
-                android:layout_height="wrap_content"
-                android:layout_width="0px"
-                android:layout_weight="1"
-                android:text="Ok" 
-        />
-        <Button android:id="@+id/d_database_cancel"
-                android:layout_height="wrap_content"
-                android:layout_width="0px"
-                android:layout_weight="1"
-                android:text="Cancel" 
-        />                  
+		<Button android:id="@+id/d_database_ok"
+		        android:layout_height="wrap_content"
+		        android:layout_width="0px"
+		        android:layout_weight="1"
+		        android:text="Ok" />
+		        
+		<Button android:id="@+id/d_database_cancel"
+		        android:layout_height="wrap_content"
+		        android:layout_width="0px"
+		        android:layout_weight="1"
+		        android:text="Cancel" />
+		                          
     </LinearLayout> 
+    
 </LinearLayout>

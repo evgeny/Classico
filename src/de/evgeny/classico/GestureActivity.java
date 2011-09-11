@@ -15,7 +15,6 @@ import org.apache.http.util.ByteArrayBuffer;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -31,8 +30,7 @@ import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener;
-import android.view.Window;
-import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 
@@ -57,7 +55,7 @@ public class GestureActivity extends Activity {
 	public HashMap<Integer, SoftReference<Bitmap>> cache;
 	private final int cacheSize = 4; //use even numbers
 	private int currentPageNumber;
-	private int lastPageNumber = 1000; //bad decision, but it's work
+	private int lastPageNumber = 1000; //bad decision, but it's work for now
 	private File imslpDir;
 
 	private ImageView mImageView;
@@ -75,7 +73,7 @@ public class GestureActivity extends Activity {
     private static final int SWIPE_MAX_OFF_PATH = 250;
     private static final int SWIPE_THRESHOLD_VELOCITY = 1000;
     
-    private static Display sDisplay;
+    private static FrameLayout sFrameLayout;
     
 	Matrix mMatrix = new Matrix();
 	
@@ -87,21 +85,19 @@ public class GestureActivity extends Activity {
 		
 		final Bundle extras = getIntent().getExtras();
 		mImslp = extras.getString("imslp");
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.gesture_layout);
 
-		mDialog = new ProgressDialog(getApplicationContext());
+		mDialog = new ProgressDialog(this);
 		mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 		mDialog.setMessage("Loading...");
-		mDialog.setCancelable(false);
+
 		//Find the dir to save cached images
 		imslpDir = new File(Environment.getExternalStorageDirectory(),"Classico/" + mImslp);			
 		if(!imslpDir.exists()) {
 			imslpDir.mkdirs();
 		}
 		
-		sDisplay = ((WindowManager)
-				getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+		sFrameLayout = (FrameLayout) findViewById(android.R.id.content);
 
 		mGestureDetector = new GestureDetector(this, new GestureListener(), null, true);
 		mScaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
@@ -140,8 +136,8 @@ public class GestureActivity extends Activity {
 			mCurrentMatrixValues[4] = 1.0f;
 		}
 
-		final float y = (sDisplay.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
-		final float x = (sDisplay.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
+		final float y = (sFrameLayout.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
+		final float x = (sFrameLayout.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
 
 		if (x < 0) {
 			if (mCurrentMatrixValues[2] > 0) {
@@ -241,7 +237,7 @@ public class GestureActivity extends Activity {
 				cacheOffset = taskCurrentPage - cacheSize / 2;
 			}
 
-			Log.i(TAG, "cache offset = " + cacheOffset);
+			Log.d(TAG, "cache offset = " + cacheOffset);
 			//(re)fill cache
 			for (int i = cacheOffset + 1; i <= cacheOffset + cacheSize; i++) {
 				if (i > lastPageNumber) {
@@ -270,8 +266,6 @@ public class GestureActivity extends Activity {
 		protected void onProgressUpdate(Boolean... values) {
 			super.onProgressUpdate(values);
 			if (values[0]) {
-//				mDialog = ProgressDialog.show(GestureActivity.this, "", 
-//						"Loading. Please wait...", true);
 				mDialog.show();
 			} else {
 				mDialog.dismiss();
@@ -339,16 +333,14 @@ public class GestureActivity extends Activity {
 			}
             byte[] buffer = new byte[8192];
             int bufferLength = 0;
-            int downloadedSize = 0;
+            float downloadedSize = 0;
             
 			ByteArrayBuffer baf = new ByteArrayBuffer(50);
             while ((bufferLength = is.read(buffer)) > 0) {
             	baf.append(buffer, 0, bufferLength);
                 downloadedSize += bufferLength;
                 mDialog.setProgress((int)(downloadedSize/fileLength*100));
-                //helper.progressUpdate((int)(downloadedSize/totalSize*100));
             }
-			//final Bitmap bitmap = BitmapFactory.decodeStream(is);
             final Bitmap bitmap = BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
 			saveToFile(bitmap, pageNumber);
 			return true;
@@ -398,8 +390,8 @@ public class GestureActivity extends Activity {
 		if (!taskRunned) {
 			Log.d(TAG, "bitmap " + currentPageNumber + " not in cache, " +
 					"start asynctask");
-			mDialog = ProgressDialog.show(GestureActivity.this, "", 
-					"Loading. Please wait...", true);
+			mDialog.setProgress(0);
+			mDialog.show();
 			new FillCacheTask().execute(currentPageNumber);
 		} else {
 			Log.d(TAG, "bitmap " + currentPageNumber + " not in cache, " +
