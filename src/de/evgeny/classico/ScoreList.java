@@ -35,7 +35,7 @@ public class ScoreList extends GDActivity {
 		
 		Uri uri = getIntent().getData();
 		Log.d(TAG, "uri=" + uri);
-		Dialog dialog = ProgressDialog.show(ScoreList.this, "", 
+		Dialog dialog = ProgressDialog.show(ScoreList.this, "Wait", 
 				"Query database. Please wait...", true);
 		final Cursor cursor = managedQuery(uri, null, null, null, null);
 		

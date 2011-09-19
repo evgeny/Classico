@@ -30,13 +30,14 @@ import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener;
-import android.widget.FrameLayout;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.widget.Toast;
 
 public class GestureActivity extends Activity {
 
-	private static final String TAG = GestureDetector.class.getSimpleName();
+	private static final String TAG = GestureActivity.class.getSimpleName();
 	
 	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
 	private String mImslp;
@@ -51,8 +52,10 @@ public class GestureActivity extends Activity {
 	private float mBitmapHeight;
 
 	private boolean mFirstTouch = true;
+	private float oldScale = 0;
 
-	public HashMap<Integer, SoftReference<Bitmap>> cache;
+	private static HashMap<Integer, SoftReference<Bitmap>> cache;
+	
 	private final int cacheSize = 4; //use even numbers
 	private int currentPageNumber;
 	private int lastPageNumber = 1000; //bad decision, but it's work for now
@@ -60,11 +63,8 @@ public class GestureActivity extends Activity {
 
 	private ImageView mImageView;
 
-	// These matrices will be used to scale points of the image
-	Matrix matrix = new Matrix();
-	Matrix savedMatrix = new Matrix();
-
-	Bitmap originImage = null;
+	// These matrixes will be used to scale points of the image
+	Matrix currentMatrix = new Matrix();
 
 	private GestureDetector mGestureDetector;
 	private ScaleGestureDetector mScaleGestureDetector;
@@ -73,9 +73,8 @@ public class GestureActivity extends Activity {
     private static final int SWIPE_MAX_OFF_PATH = 250;
     private static final int SWIPE_THRESHOLD_VELOCITY = 1000;
     
-    private static FrameLayout sFrameLayout;
-    
-	Matrix mMatrix = new Matrix();
+    //private static FrameLayout sFrameLayout;
+    private static View sDecorView;
 	
 
 	/** Called when the activity is first created. */
@@ -89,7 +88,8 @@ public class GestureActivity extends Activity {
 
 		mDialog = new ProgressDialog(this);
 		mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-		mDialog.setMessage("Loading...");
+		mDialog.setMessage("Loading next page...");
+
 
 		//Find the dir to save cached images
 		imslpDir = new File(Environment.getExternalStorageDirectory(),"Classico/" + mImslp);			
@@ -97,7 +97,7 @@ public class GestureActivity extends Activity {
 			imslpDir.mkdirs();
 		}
 		
-		sFrameLayout = (FrameLayout) findViewById(android.R.id.content);
+		sDecorView = getWindow().getDecorView();
 
 		mGestureDetector = new GestureDetector(this, new GestureListener(), null, true);
 		mScaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
@@ -119,13 +119,14 @@ public class GestureActivity extends Activity {
 		}
 		
 		mScaleGestureDetector.onTouchEvent(event);
-		if (!mScaleGestureDetector.isInProgress()) mGestureDetector.onTouchEvent(event);
+		if (!mScaleGestureDetector.isInProgress()) 
+			mGestureDetector.onTouchEvent(event);
 		
-		mImageView.setImageMatrix(correctBorder(mImageView.getImageMatrix()));
 		return true;
 	}
 
 	private Matrix correctBorder(final Matrix matrix) {
+		Log.d(TAG, "correct boarder");
 		matrix.getValues(mCurrentMatrixValues);
 
 		if (mCurrentMatrixValues[0] < mOriginMatrixValues[0]) {
@@ -136,10 +137,11 @@ public class GestureActivity extends Activity {
 			mCurrentMatrixValues[4] = 1.0f;
 		}
 
-		final float y = (sFrameLayout.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
-		final float x = (sFrameLayout.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
+		final float y = (sDecorView.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
+		final float x = (sDecorView.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
 
-		if (x < 0) {
+		if (x <= 0) {
+			Log.d(TAG, "1");
 			if (mCurrentMatrixValues[2] > 0) {
 				mCurrentMatrixValues[2] = 0;
 			}
@@ -147,17 +149,20 @@ public class GestureActivity extends Activity {
 				mCurrentMatrixValues[2] = x*2;
 			}
 		} else {
+			Log.d(TAG, "2");
 			mCurrentMatrixValues[2] = x;
 		}
 
-		if (y < 0) {
+		if (y <= 0) {
+			Log.d(TAG, "3");
 			if (mCurrentMatrixValues[5] > 0) {
 				mCurrentMatrixValues[5] = 0;
 			}
 			if (mCurrentMatrixValues[5] < (y*2)) {
 				mCurrentMatrixValues[5] = y*2;
-			} 
+			}
 		} else {
+			Log.d(TAG, "4");
 			mCurrentMatrixValues[5] = y;
 		}
 		matrix.setValues(mCurrentMatrixValues);
@@ -169,9 +174,9 @@ public class GestureActivity extends Activity {
 
 		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 			try {
+				Log.d(TAG, "onFling(): ");
 				if (Math.abs(e1.getY() - e2.getY()) > SWIPE_MAX_OFF_PATH)
 					return false;
-				Log.d(TAG, "onFling(): ");
 				// right to left swipe
 				if(e1.getX() - e2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
 					if (currentPageNumber == lastPageNumber) {
@@ -195,21 +200,32 @@ public class GestureActivity extends Activity {
 		@Override
 		public boolean onScroll(MotionEvent e1, MotionEvent e2,
 				float distanceX, float distanceY) {
-			mMatrix.set(mImageView.getImageMatrix());
-			mMatrix.postTranslate(-distanceX, -distanceY);
-			mImageView.setImageMatrix(mMatrix);
+			
+			Log.d(TAG, "onScroll");
+			currentMatrix.set(mImageView.getImageMatrix());
+			currentMatrix.postTranslate(-distanceX, -distanceY);
+			mImageView.setImageMatrix(correctBorder(currentMatrix));
 
 			return super.onScroll(e1, e2, distanceX, distanceY);
 		}
 	}
 
 	private class ScaleListener extends SimpleOnScaleGestureListener {
+		
 		@Override
 		public boolean onScale(ScaleGestureDetector detector) {
+			if (oldScale == 0)
+				oldScale = detector.getScaleFactor();
+			
+			if (Math.abs(oldScale - detector.getScaleFactor()) < 0.03) return false;
+			else oldScale = detector.getScaleFactor();						
+						
 			mImageView.setScaleType(ImageView.ScaleType.MATRIX);
-			mMatrix.set(mImageView.getImageMatrix());
-			mMatrix.postScale(detector.getScaleFactor(), detector.getScaleFactor());
-			mImageView.setImageMatrix(mMatrix);
+			currentMatrix.set(mImageView.getImageMatrix());			
+			currentMatrix.postScale(detector.getScaleFactor(), detector.getScaleFactor(),
+					detector.getFocusX(), detector.getFocusY());
+			
+			mImageView.setImageMatrix(correctBorder(currentMatrix));
 			return super.onScale(detector);
 		}
 	}
@@ -249,6 +265,11 @@ public class GestureActivity extends Activity {
 					if (!loadFromFile(i)) {
 						if (!loadFromServer(i)) {
 							lastPageNumber = i - 1;
+							if (lastPageNumber == 0) {
+								Toast.makeText(getApplicationContext(), 
+										"No page for this score avaible", Toast.LENGTH_LONG)
+									.show();
+							}
 							Log.d(TAG, "last avaible page is " + lastPageNumber);
 						}
 					}
@@ -266,8 +287,10 @@ public class GestureActivity extends Activity {
 		protected void onProgressUpdate(Boolean... values) {
 			super.onProgressUpdate(values);
 			if (values[0]) {
+				Log.d(TAG, "show dialog");
 				mDialog.show();
 			} else {
+				Log.d(TAG, "dismiss dialog");
 				mDialog.dismiss();
 				Log.d(TAG, "pages in cache " + cache.size());
 				Log.d(TAG, "show page number " + currentPageNumber);
@@ -325,6 +348,8 @@ public class GestureActivity extends Activity {
 
 			URLConnection ucon = url.openConnection();
 			ucon.setUseCaches(true);
+			ucon.setConnectTimeout(5000);
+
 			final int fileLength = ucon.getContentLength();
 			InputStream is = ucon.getInputStream();
 
@@ -387,11 +412,12 @@ public class GestureActivity extends Activity {
 			setBitmap(cache.get(currentPageNumber).get());
 			return;
 		} 
+		Log.d(TAG, "show dialog");
+		mDialog.setProgress(0);
+		mDialog.show();
 		if (!taskRunned) {
 			Log.d(TAG, "bitmap " + currentPageNumber + " not in cache, " +
 					"start asynctask");
-			mDialog.setProgress(0);
-			mDialog.show();
 			new FillCacheTask().execute(currentPageNumber);
 		} else {
 			Log.d(TAG, "bitmap " + currentPageNumber + " not in cache, " +
