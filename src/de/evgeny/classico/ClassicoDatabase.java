@@ -16,9 +16,15 @@ public class ClassicoDatabase {
 	public static final String KEY_COMPOSITION = SearchManager.SUGGEST_COLUMN_TEXT_2;
 	public static final String KEY_COMPOSITION_ID = "comp_id";
 	public static final String KEY_COMPOSITION_RATE = "rate";
+	public static final String KEY_ID = "_id";
+	
+	private static final String ORDER_BY_RATE = 
+		"cast(" + KEY_COMPOSITION_RATE + " as integer) DESC";
+	private static final String ORDER_BY_TITLE = KEY_COMPOSITION + " ASC";
+	private static final String ORDER_BY_COMPOSER = KEY_COMPOSER + " ASC";
 
 	public static final String DATABASE_NAME = "/sdcard/classico.db";
-	private static final String FTS_VIRTUAL_TABLE = "titles";
+	public static final String TITLE_TABLE = "titles";
 	public static final String SCORE_TABLE = "scores";
 
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
@@ -78,15 +84,22 @@ public class ClassicoDatabase {
 		String selection = "rowid = ?";
 		String[] selectionArgs = new String[] {rowId};
 
-		return query(selection, selectionArgs, columns);
+		return query(selection, selectionArgs, columns, null, null);
 	}
 	
-	public Cursor getScores(String compId, String[] columns) {
-		String selection = "comp_id = ?";
-		String[] selectionArgs = new String[] {compId};
-
-		return query(selection, selectionArgs, columns);
+	public Cursor getAllCompositions(String[] columns) {
+		return query(null, null, columns, ORDER_BY_TITLE, null);
 	}
+	
+	public Cursor getAllComposer(String[] columns) {
+		return query(null, null, columns, ORDER_BY_COMPOSER, ClassicoDatabase.KEY_COMPOSER);
+	}
+//	public Cursor getScores(String compId, String[] columns) {
+//		String selection = "comp_id = ?";
+//		String[] selectionArgs = new String[] {compId};
+//
+//		return query(selection, selectionArgs, columns);
+//	}
 
 	/**
 	 * Returns a Cursor over all words that match the given query
@@ -96,10 +109,10 @@ public class ClassicoDatabase {
 	 * @return Cursor over all words that match, or null if none found.
 	 */
 	public Cursor getComposerMatches(String query, String[] columns) {
-		String selection = FTS_VIRTUAL_TABLE + " MATCH ?";
+		String selection = TITLE_TABLE + " MATCH ?";
 		String[] selectionArgs = new String[] {query+"*"};
 
-		return query(selection, selectionArgs, columns);
+		return query(selection, selectionArgs, columns, ORDER_BY_RATE, null);
 
 		/* This builds a query that looks like:
 		 *     SELECT <columns> FROM <table> WHERE <KEY_WORD> MATCH 'query*'
@@ -123,18 +136,14 @@ public class ClassicoDatabase {
 	 * @param columns The columns to return
 	 * @return A Cursor over all rows matching the query
 	 */
-	private Cursor query(String selection, String[] selectionArgs, String[] columns) {
-		/* The SQLiteBuilder provides a map for all possible columns requested to
-		 * actual columns in the database, creating a simple column alias mechanism
-		 * by which the ContentProvider does not need to know the real column names
-		 */
+	private Cursor query(String selection, String[] selectionArgs, String[] columns, 
+			String sortOrder, String groupBy) {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-		builder.setTables(FTS_VIRTUAL_TABLE);
+		builder.setTables(TITLE_TABLE);
 		builder.setProjectionMap(mColumnMap);
 		
 		Cursor cursor = builder.query(mClassicoDatabase,
-				//columns, selection, selectionArgs, null, null, null);
-				columns, selection, selectionArgs, null, null, "cast(" + KEY_COMPOSITION_RATE + " as integer) DESC");				
+				columns, selection, selectionArgs, groupBy, null, sortOrder);				
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {

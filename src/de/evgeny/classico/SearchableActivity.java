@@ -5,38 +5,29 @@ import greendroid.app.GDActivity;
 import greendroid.widget.ActionBar;
 import greendroid.widget.ActionBarItem;
 import greendroid.widget.ActionBarItem.Type;
-
-import java.io.File;
-
-import android.app.Dialog;
 import android.app.SearchManager;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-public class MainActivity extends GDActivity {
-	private final static String TAG = MainActivity.class.getSimpleName();
+public class SearchableActivity extends GDActivity {
+	private final static String TAG = SearchableActivity.class.getSimpleName();
 
 	private TextView mTextView;
 	private ListView mListView;
 
-	public MainActivity() {
+	public SearchableActivity() {
 		super(ActionBar.Type.Normal);
 	}
 	
@@ -53,22 +44,7 @@ public class MainActivity extends GDActivity {
 		mTextView = (TextView) findViewById(R.id.text);
 		mListView = (ListView) findViewById(R.id.list_titles);
 		
-		//check if database exist
-		File dir = new File(Environment.getExternalStorageDirectory(),"Classico/");
-		File db = new File(dir, "classico.db");
-		if (!db.exists() || db.canRead()) {
-			new DownloadDialog(this).show();
-		}
-		
 		onNewIntent(getIntent());		
-	}
-	
-	public void onCancelClick(View view) {
-		Log.d(TAG, "onCancelClick(): ");
-	}
-	
-	public void onOkPressedClick(View v) {
-		Log.d(TAG, "onOkClick(): ");
 	}
  
 	@Override
@@ -112,7 +88,6 @@ public class MainActivity extends GDActivity {
 	 * @param query The search query
 	 */
 	private void showResults(String query) {
-
 		Cursor cursor = managedQuery(ComposerProvider.CONTENT_URI, null, null,
 				new String[] {query}, null);
 
@@ -150,60 +125,6 @@ public class MainActivity extends GDActivity {
 					startActivity(scoreIntent);
 				}
 			});
-		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.options_menu, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case R.id.search:
-			onSearchRequested();
-			return true;
-		case R.id.exit:
-			finish();
-			return true;
-		default:
-			return false;
-		}
-	}
-	
-	private class DownloadDialog extends Dialog implements OnClickListener {
-		
-		private Button cancelButton;
-		private Button okButton;
-
-		public DownloadDialog(Context context) {
-			super(context);
-			
-			requestWindowFeature(Window.FEATURE_NO_TITLE);
-			setContentView(R.layout.database_dialog);
-			
-			cancelButton = (Button) findViewById(R.id.d_database_ok);
-			okButton = (Button) findViewById(R.id.d_database_cancel);
-			
-			cancelButton.setOnClickListener(this);
-			okButton.setOnClickListener(this);
-		}
-
-		@Override
-		public void onClick(View v) {
-			switch (v.getId()) {
-			case R.id.d_database_cancel:
-				this.dismiss();
-				break;
-			case R.id.d_database_ok:
-				//TODO download the database
-				break;
-			default:
-				break;
-			}
 		}
 	}
 }

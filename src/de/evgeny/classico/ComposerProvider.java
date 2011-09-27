@@ -15,6 +15,8 @@ public class ComposerProvider extends ContentProvider {
 
 	public static String AUTHORITY = "de.evgeny.classico.composerprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/classico");
+	public static final Uri TITLES_URI = Uri.parse("content://" + AUTHORITY + "/classico/title");
+	public static final Uri COMPOSER_URI = Uri.parse("content://" + AUTHORITY + "/classico/composer");
 
 	// MIME types used for searching words or looking up a single definition
 	public static final String COMPOSITIONS_MIME_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE +
@@ -32,6 +34,9 @@ public class ComposerProvider extends ContentProvider {
 	private static final int SEARCH_SUGGEST = 2;
 	private static final int REFRESH_SHORTCUT = 3;
 	private static final int GET_SCORE = 4;
+	private static final int GET_ALL_TITLES = 5;
+	private static final int GET_ALL_COMPOSERS = 6;
+	private static final int GET_TITLE = 7;
 	private static final UriMatcher sURIMatcher = buildUriMatcher();
 
 
@@ -60,6 +65,9 @@ public class ComposerProvider extends ContentProvider {
 		matcher.addURI(AUTHORITY, SearchManager.SUGGEST_URI_PATH_QUERY + "/*", SEARCH_SUGGEST);
 		// imslp table
 		matcher.addURI(AUTHORITY, "classico/imslp/#", GET_SCORE);
+		matcher.addURI(AUTHORITY, "classico/title", GET_ALL_TITLES);
+		matcher.addURI(AUTHORITY, "classico/title/#", GET_TITLE);
+		matcher.addURI(AUTHORITY, "classico/composer", GET_ALL_COMPOSERS);
 		return matcher;
 	}
 
@@ -80,8 +88,14 @@ public class ComposerProvider extends ContentProvider {
                 return SCORE_MIME_TYPE;
             case SEARCH_SUGGEST:
                 return SearchManager.SUGGEST_MIME_TYPE;
+            case GET_ALL_TITLES:
+            	return COMPOSITION_MIME_TYPE;
+            case GET_ALL_COMPOSERS:
+            	return COMPOSITION_MIME_TYPE;
             case REFRESH_SHORTCUT:
                 return SearchManager.SHORTCUT_MIME_TYPE;
+            case GET_TITLE:
+            	return COMPOSITION_MIME_TYPE;
             default:
                 throw new IllegalArgumentException("Unknown URL " + uri);
         }
@@ -122,6 +136,12 @@ public class ComposerProvider extends ContentProvider {
 			return getComposition(uri);
 		case GET_SCORE:
 			return getScore(uri);
+		case GET_ALL_TITLES:
+			return getAllTitles(uri);
+		case GET_ALL_COMPOSERS:
+			return getAllComposers(uri);
+//		case GET_TITLE:
+//			return getTitle(uri);
 		default:
 			throw new IllegalArgumentException("Unknown Uri: " + uri);
 		}
@@ -163,18 +183,37 @@ public class ComposerProvider extends ContentProvider {
 	private Cursor getScore(Uri uri) {
 		Log.d(TAG, "getScore");
 		String compId = uri.getLastPathSegment();
-		final String[] columns = new String[]{"_id", "imslp", "meta"};
+		final String[] columns = new String[]{"_id", "imslp", "pages"};
 		final String selection = "comp_id=?";
 		final String[] selectionArgs = new String[]{compId};
 		
 		return mClassicoDatabase.getCursor(
 				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs);
 	}
+	
+	private Cursor getAllTitles(Uri uri) {
+		Log.d(TAG, "getAllTitles(): ");
+		final String[] columns = new String[]{
+				BaseColumns._ID,
+				ClassicoDatabase.KEY_COMPOSITION,
+				ClassicoDatabase.KEY_COMPOSITION_ID};
+		
+		return mClassicoDatabase.getAllCompositions(columns);
+	}
+	
+	private Cursor getAllComposers(Uri uri) {
+		Log.d(TAG, "getAllComposers(): ");
+		final String[] columns = new String[]{
+				BaseColumns._ID,
+				ClassicoDatabase.KEY_COMPOSER,
+				ClassicoDatabase.KEY_COMPOSITION_ID};
+		
+		return mClassicoDatabase.getAllComposer(columns);
+	}
 
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 }

@@ -4,8 +4,6 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
         
-<!--         <include layout="@layout/title_bar"/> -->
-        
     <TextView
             android:id="@+id/text"
             android:textColor="?android:textColorPrimary"

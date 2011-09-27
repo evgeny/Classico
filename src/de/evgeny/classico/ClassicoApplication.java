@@ -16,6 +16,6 @@ public class ClassicoApplication extends GDApplication{
 	
     @Override
     public Class<?> getHomeActivityClass() {
-        return MainActivity.class;
+        return Dashboard.class;
     }
 }
