@@ -23,7 +23,7 @@ public class ClassicoDatabase {
 	private static final String ORDER_BY_TITLE = KEY_COMPOSITION + " ASC";
 	private static final String ORDER_BY_COMPOSER = KEY_COMPOSER + " ASC";
 
-	public static final String DATABASE_NAME = "/sdcard/classico.db";
+	public static final String DATABASE_NAME = "/sdcard/Classico/classico.db";
 	public static final String TITLE_TABLE = "titles";
 	public static final String SCORE_TABLE = "scores";
 

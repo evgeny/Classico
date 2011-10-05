@@ -40,10 +40,15 @@ public class GestureActivity extends Activity {
 	private static final String TAG = GestureActivity.class.getSimpleName();
 	
 	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
+	private final static float maxScaleFactor = 3.0f;
 	private String mImslp;
+	
 	private ProgressDialog mDialog;
+	
 	private boolean restartTask = false;
 	private boolean taskRunned = false;
+	
+//	private String pageNumberText;
 
 	private Bitmap mOriginBitmap;
 	private float[] mOriginMatrixValues = new float[9];
@@ -54,11 +59,11 @@ public class GestureActivity extends Activity {
 	private boolean mFirstTouch = true;
 	private float oldScale = 0;
 
-	private static HashMap<Integer, SoftReference<Bitmap>> cache;
+	private HashMap<Integer, SoftReference<Bitmap>> cache; 		
 	
 	private final int cacheSize = 4; //use even numbers
 	private int currentPageNumber;
-	private int lastPageNumber = 1000; //bad decision, but it's work for now
+	private int lastPageNumber;// = 1000; //bad decision, but it's work for now
 	private File imslpDir;
 
 	private ImageView mImageView;
@@ -73,18 +78,28 @@ public class GestureActivity extends Activity {
     private static final int SWIPE_MAX_OFF_PATH = 250;
     private static final int SWIPE_THRESHOLD_VELOCITY = 1000;
     
-    //private static FrameLayout sFrameLayout;
     private static View sDecorView;
 	
 
-	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		final Bundle extras = getIntent().getExtras();
 		mImslp = extras.getString("imslp");
+		lastPageNumber = extras.getInt("pages");
+		if (lastPageNumber == 0) {
+			lastPageNumber = 1000;
+		}
+		
+		if (savedInstanceState != null) {
+			currentPageNumber = savedInstanceState.getInt("currentpage", 1);
+		} else {
+			currentPageNumber = 1;
+		}
 		setContentView(R.layout.gesture_layout);
+		
+		Log.d(TAG, "current page=" + currentPageNumber);
 
 		mDialog = new ProgressDialog(this);
 		mDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
@@ -106,9 +121,20 @@ public class GestureActivity extends Activity {
 		
 		//cache init
 		cache = new HashMap<Integer, SoftReference<Bitmap>>();
-		currentPageNumber = 1;
+		
+		//show current page number
+		Toast.makeText(this, currentPageNumber + "/" + lastPageNumber, Toast.LENGTH_SHORT).show();
+		
 		//start fill cache
 		getBitmap();
+	}
+	
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		
+		Log.d(TAG, "onSaveInstanceState " + currentPageNumber);
+		outState.putInt("currentpage", currentPageNumber);
 	}
 
 	@Override
@@ -132,16 +158,15 @@ public class GestureActivity extends Activity {
 		if (mCurrentMatrixValues[0] < mOriginMatrixValues[0]) {
 			mCurrentMatrixValues[0] = mOriginMatrixValues[0];
 			mCurrentMatrixValues[4] = mOriginMatrixValues[4];
-		} else if (mCurrentMatrixValues[0] > 1.0f) {
-			mCurrentMatrixValues[0] = 1.0f;
-			mCurrentMatrixValues[4] = 1.0f;
+		} else if (mCurrentMatrixValues[0] > maxScaleFactor) {
+			mCurrentMatrixValues[0] = maxScaleFactor;
+			mCurrentMatrixValues[4] = maxScaleFactor;
 		}
 
 		final float y = (sDecorView.getHeight()-(mBitmapHeight*mCurrentMatrixValues[0]))/2;
 		final float x = (sDecorView.getWidth()-(mBitmapWidth*mCurrentMatrixValues[0]))/2;
 
 		if (x <= 0) {
-			Log.d(TAG, "1");
 			if (mCurrentMatrixValues[2] > 0) {
 				mCurrentMatrixValues[2] = 0;
 			}
@@ -149,12 +174,10 @@ public class GestureActivity extends Activity {
 				mCurrentMatrixValues[2] = x*2;
 			}
 		} else {
-			Log.d(TAG, "2");
 			mCurrentMatrixValues[2] = x;
 		}
 
 		if (y <= 0) {
-			Log.d(TAG, "3");
 			if (mCurrentMatrixValues[5] > 0) {
 				mCurrentMatrixValues[5] = 0;
 			}
@@ -162,7 +185,6 @@ public class GestureActivity extends Activity {
 				mCurrentMatrixValues[5] = y*2;
 			}
 		} else {
-			Log.d(TAG, "4");
 			mCurrentMatrixValues[5] = y;
 		}
 		matrix.setValues(mCurrentMatrixValues);
@@ -183,12 +205,14 @@ public class GestureActivity extends Activity {
 						return false;
 					}
 					currentPageNumber++;
+					Toast.makeText(GestureActivity.this, currentPageNumber + "/" + lastPageNumber, Toast.LENGTH_SHORT).show();
 					getBitmap();
 				}  else if (e2.getX() - e1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
 					if (currentPageNumber == 1) {
 						return false;
 					}
 					currentPageNumber--;
+					Toast.makeText(GestureActivity.this, currentPageNumber + "/" + lastPageNumber, Toast.LENGTH_SHORT).show();
 					getBitmap();
 				}
 			} catch (Exception e) {
@@ -252,7 +276,8 @@ public class GestureActivity extends Activity {
 			if (taskCurrentPage >= lastPageNumber - cacheSize / 2) {
 				cacheOffset = taskCurrentPage - cacheSize / 2;
 			}
-
+			if (cacheOffset < 0) cacheOffset = 0;
+			
 			Log.d(TAG, "cache offset = " + cacheOffset);
 			//(re)fill cache
 			for (int i = cacheOffset + 1; i <= cacheOffset + cacheSize; i++) {
@@ -266,9 +291,7 @@ public class GestureActivity extends Activity {
 						if (!loadFromServer(i)) {
 							lastPageNumber = i - 1;
 							if (lastPageNumber == 0) {
-								Toast.makeText(getApplicationContext(), 
-										"No page for this score avaible", Toast.LENGTH_LONG)
-									.show();
+								return false;						
 							}
 							Log.d(TAG, "last avaible page is " + lastPageNumber);
 						}
@@ -280,7 +303,7 @@ public class GestureActivity extends Activity {
 				}			
 			}
 			Log.d(TAG, "background task finished");
-			return null;
+			return true;
 		}
 
 		@Override
@@ -305,6 +328,11 @@ public class GestureActivity extends Activity {
 		@Override
 		protected void onPostExecute(Boolean result) {
 			super.onPostExecute(result);
+			if (!result) {
+				mDialog.dismiss();
+				Toast.makeText(getApplicationContext(), 
+						"No pages for this score avaible", Toast.LENGTH_LONG).show();
+			}
 			if (restartTask) {
 				restartTask = false;
 				new FillCacheTask().execute(currentPageNumber);
@@ -424,5 +452,12 @@ public class GestureActivity extends Activity {
 			"asynctask will be restarted");
 			restartTask = true;
 		}
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		
+		mDialog.dismiss();
 	}
 }

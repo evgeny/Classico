@@ -103,9 +103,10 @@ public class ScoreList extends GDActivity {
 			mListView.setOnItemClickListener(new OnItemClickListener() {
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 					cursor.moveToPosition(position);
-					final Intent partitureViewerIntent = new Intent(getApplicationContext(), GestureActivity.class);
-					partitureViewerIntent.putExtra("imslp", cursor.getString(cursor.getColumnIndex("imslp")));
-					startActivity(partitureViewerIntent);
+					final Intent partitureViewer = new Intent(getApplicationContext(), GestureActivity.class);
+					partitureViewer.putExtra("imslp", cursor.getString(cursor.getColumnIndex("imslp")));
+					partitureViewer.putExtra("pages", cursor.getInt(cursor.getColumnIndex("pages")));
+					startActivity(partitureViewer);
 				}
 			});
 			waitingDialog.dismiss();

@@ -111,8 +111,14 @@ public class ComposerProvider extends ContentProvider {
 	public boolean onCreate() {
 		Log.w(TAG, "onCreate" );
 		
-		mClassicoDatabase = new ClassicoDatabase();
+		//mClassicoDatabase = new ClassicoDatabase();
 		return true;
+	}
+	
+	private ClassicoDatabase getDatabase() {
+		if (mClassicoDatabase == null)
+			mClassicoDatabase = new ClassicoDatabase();
+		return mClassicoDatabase;
 	}
 
 	@Override
@@ -156,7 +162,7 @@ public class ComposerProvider extends ContentProvider {
 				SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID};
 
 		//return mClassico.getComposerMatches(query, columns);
-		return mClassicoDatabase.getComposerMatches(query, columns);
+		return getDatabase().getComposerMatches(query, columns);
 	}
 
 	private Cursor search(String query) {
@@ -167,7 +173,7 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION};
 
 		//return mClassico.getComposerMatches(query, columns);
-		return mClassicoDatabase.getComposerMatches(query, columns);
+		return getDatabase().getComposerMatches(query, columns);
 	}
 
 	private Cursor getComposition(Uri uri) {
@@ -177,7 +183,7 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION,
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 
-		return mClassicoDatabase.getComposer(rowId, columns);
+		return getDatabase().getComposer(rowId, columns);
 	}
 	
 	private Cursor getScore(Uri uri) {
@@ -187,7 +193,7 @@ public class ComposerProvider extends ContentProvider {
 		final String selection = "comp_id=?";
 		final String[] selectionArgs = new String[]{compId};
 		
-		return mClassicoDatabase.getCursor(
+		return getDatabase().getCursor(
 				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs);
 	}
 	
@@ -198,7 +204,7 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION,
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 		
-		return mClassicoDatabase.getAllCompositions(columns);
+		return getDatabase().getAllCompositions(columns);
 	}
 	
 	private Cursor getAllComposers(Uri uri) {
@@ -208,7 +214,7 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSER,
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 		
-		return mClassicoDatabase.getAllComposer(columns);
+		return getDatabase().getAllComposer(columns);
 	}
 
 	@Override
