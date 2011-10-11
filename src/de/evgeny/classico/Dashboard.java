@@ -137,6 +137,7 @@ public class Dashboard extends GDActivity {
 			switch (v.getId()) {
 			case R.id.d_database_cancel:
 				this.dismiss();
+				Dashboard.this.finish();
 				break;
 			case R.id.d_database_ok:
 				new DownloaderAsyncTask().execute(null);
@@ -164,8 +165,8 @@ public class Dashboard extends GDActivity {
 				
 				@Override
 				public void onCancel(DialogInterface dialog) {
+					dialog.cancel();
 					Dashboard.this.finish();
-					
 				}
 			});
 			

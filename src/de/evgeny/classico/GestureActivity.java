@@ -39,7 +39,7 @@ public class GestureActivity extends Activity {
 
 	private static final String TAG = GestureActivity.class.getSimpleName();
 	
-	private final static String WEB_SERVER = "http://scorelocator.appspot.com/image?sid=IMSLP";
+	private final static String WEB_SERVER = "http://www.peachnote.com/rest/api/v0/image?sid=IMSLP";
 	private final static float maxScaleFactor = 3.0f;
 	private String mImslp;
 	
@@ -345,8 +345,9 @@ public class GestureActivity extends Activity {
 	private String getPageLink(final int pageNumber) {
 		final Display display = getWindowManager().getDefaultDisplay(); 
 		final String url = WEB_SERVER + mImslp
-		+ "&h=" + display.getHeight()
-		+ "&page=" + pageNumber; 
+		+ "&page=" + pageNumber
+		+ "&h=" + display.getHeight();
+		 
 		Log.d(TAG, "load page "+ pageNumber +" from url: " + url);
 		return url;
 	}
@@ -395,6 +396,7 @@ public class GestureActivity extends Activity {
                 mDialog.setProgress((int)(downloadedSize/fileLength*100));
             }
             final Bitmap bitmap = BitmapFactory.decodeByteArray(baf.toByteArray(), 0, baf.length());
+            if (bitmap == null) return false;
 			saveToFile(bitmap, pageNumber);
 			return true;
 		} catch (IOException e) {
