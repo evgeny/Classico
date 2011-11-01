@@ -17,6 +17,7 @@ public class ComposerProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/classico");
 	public static final Uri TITLES_URI = Uri.parse("content://" + AUTHORITY + "/classico/title");
 	public static final Uri COMPOSER_URI = Uri.parse("content://" + AUTHORITY + "/classico/composer");
+	public static final Uri RECENT_TITLES_URI = Uri.parse("content://" + AUTHORITY + "/classico/recenttitles");
 
 	// MIME types used for searching words or looking up a single definition
 	public static final String COMPOSITIONS_MIME_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE +
@@ -37,6 +38,7 @@ public class ComposerProvider extends ContentProvider {
 	private static final int GET_ALL_TITLES = 5;
 	private static final int GET_ALL_COMPOSERS = 6;
 	private static final int GET_TITLE = 7;
+	private static final int GET_RECENT_TITLES = 8;
 	private static final UriMatcher sURIMatcher = buildUriMatcher();
 
 
@@ -68,6 +70,7 @@ public class ComposerProvider extends ContentProvider {
 		matcher.addURI(AUTHORITY, "classico/title", GET_ALL_TITLES);
 		matcher.addURI(AUTHORITY, "classico/title/#", GET_TITLE);
 		matcher.addURI(AUTHORITY, "classico/composer", GET_ALL_COMPOSERS);
+		matcher.addURI(AUTHORITY, "classico/recent_titles", GET_RECENT_TITLES);
 		return matcher;
 	}
 
@@ -96,6 +99,8 @@ public class ComposerProvider extends ContentProvider {
                 return SearchManager.SHORTCUT_MIME_TYPE;
             case GET_TITLE:
             	return COMPOSITION_MIME_TYPE;
+            case GET_RECENT_TITLES:
+            	return COMPOSITION_MIME_TYPE;
             default:
                 throw new IllegalArgumentException("Unknown URL " + uri);
         }
@@ -111,7 +116,6 @@ public class ComposerProvider extends ContentProvider {
 	public boolean onCreate() {
 		Log.w(TAG, "onCreate" );
 		
-		//mClassicoDatabase = new ClassicoDatabase();
 		return true;
 	}
 	
@@ -148,6 +152,8 @@ public class ComposerProvider extends ContentProvider {
 			return getAllComposers(uri);
 //		case GET_TITLE:
 //			return getTitle(uri);
+		case GET_RECENT_TITLES:
+			return getRecentTitles(uri);
 		default:
 			throw new IllegalArgumentException("Unknown Uri: " + uri);
 		}
@@ -172,7 +178,6 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSER,
 				ClassicoDatabase.KEY_COMPOSITION};
 
-		//return mClassico.getComposerMatches(query, columns);
 		return getDatabase().getComposerMatches(query, columns);
 	}
 
@@ -215,6 +220,12 @@ public class ComposerProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION_ID};
 		
 		return getDatabase().getAllComposer(columns);
+	}
+	
+	private Cursor getRecentTitles(Uri uri) {
+		Log.d(TAG, "getRecentTitles(): ");
+		
+		return getDatabase().get
 	}
 
 	@Override

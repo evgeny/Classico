@@ -28,6 +28,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import com.flurry.android.FlurryAgent;
 
 public class Dashboard extends GDActivity {
 
@@ -53,7 +57,16 @@ public class Dashboard extends GDActivity {
 			Log.d(TAG, "download database");
 			new DownloadDialog(this).show();
 		}
-
+		
+		ListView recentlyShowed = (ListView) findViewById(R.id.recently_showed);
+		final TextView head = new TextView(this);
+		head.setText("Recently Showed");
+		recentlyShowed.addHeaderView(head);
+		RecentScoresAdapter scores = 
+			new RecentScoresAdapter(this,((ClassicoApplication)getApplication()).getScoresHistory());
+		
+		recentlyShowed.setAdapter(scores);
+		
 		onNewIntent(getIntent());
 	}
 
@@ -76,6 +89,22 @@ public class Dashboard extends GDActivity {
 			intent.setClass(getApplicationContext(), SearchableActivity.class);
 			startActivity(intent);
 		}
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		
+		Log.d(TAG, "onStart(): ");
+		FlurryAgent.onStartSession(this, "JE85NZ7FLJEGWB36XYPR");
+		FlurryAgent.onPageView();
+	}
+	
+	@Override
+	protected void onStop() {
+		super.onStop();
+		
+		FlurryAgent.onEndSession(this);
 	}
 
 	@Override
@@ -113,7 +142,9 @@ public class Dashboard extends GDActivity {
 		intent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Composers");
 		startActivity(intent);
 	}
-
+	
+//	private ArrayList<S>
+	
 	private class DownloadDialog extends Dialog implements OnClickListener {
 
 		private Button cancelButton;

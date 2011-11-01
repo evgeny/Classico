@@ -1,26 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:orientation="vertical"
-  android:layout_width="match_parent"
-  android:layout_height="match_parent"
-  android:background="@android:color/background_light">
-  
-    <LinearLayout 
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="4"
-        android:orientation="horizontal">
-        
-        <Button style="@style/HomeButton"
-            android:text="Composers"
-            android:onClick="onComposersClick"
+        android:orientation="horizontal" >
+
+        <Button
+            style="@style/HomeButton"
             android:drawableTop="@drawable/composer128"
-        />
-        <Button style="@style/HomeButton"
-            android:text="Scores"
-            android:onClick="onScoresClick"
+            android:onClick="onComposersClick"
+            android:text="Composers" />
+
+        <Button
+            style="@style/HomeButton"
             android:drawableTop="@drawable/scores128"
-        />
+            android:onClick="onScoresClick"
+            android:text="Scores" />
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:layout_weight="5" >
+
+<!--         <TextView -->
+<!--             android:layout_width="match_parent" -->
+<!--             android:layout_height="0px" -->
+<!--             android:layout_weight="0" -->
+<!--             android:text="Recent showed"/> -->
+
+        <ListView
+            android:id="@+id/recently_showed"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:headerDividersEnabled="true" >
+        </ListView>
+    </LinearLayout>
+
 </LinearLayout>

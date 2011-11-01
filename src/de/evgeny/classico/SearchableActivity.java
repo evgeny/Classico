@@ -1,5 +1,7 @@
 package de.evgeny.classico;
 
+import java.util.HashMap;
+
 import greendroid.app.ActionBarActivity;
 import greendroid.app.GDActivity;
 import greendroid.widget.ActionBar;
@@ -11,15 +13,14 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+
+import com.flurry.android.FlurryAgent;
 
 public class SearchableActivity extends GDActivity {
 	private final static String TAG = SearchableActivity.class.getSimpleName();
@@ -63,8 +64,25 @@ public class SearchableActivity extends GDActivity {
 			// handles a search query
 			final String query = intent.getStringExtra(SearchManager.QUERY);
 			Log.d(TAG, "ACTION_SEARCH, query: " + query);
+			
+			final HashMap<String, String> paramsMap = new HashMap<String, String>();
+			paramsMap.put("search query", query);
+			FlurryAgent.onEvent("search", paramsMap);
 			showResults(query);
 		}
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		FlurryAgent.onStartSession(this, "JE85NZ7FLJEGWB36XYPR");
+		FlurryAgent.onPageView();
+	}
+	
+	@Override
+	protected void onStop() {
+		super.onStop();
+		FlurryAgent.onEndSession(this);
 	}
 
 	@Override

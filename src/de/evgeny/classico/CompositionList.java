@@ -17,6 +17,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 
+import com.flurry.android.FlurryAgent;
+
 public class CompositionList extends GDListActivity {
 	
 	private static final String TAG = CompositionList.class.getSimpleName();
@@ -37,6 +39,18 @@ public class CompositionList extends GDListActivity {
 	
 	private Activity getActivity() {
 		return this;
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		FlurryAgent.onStartSession(this, "JE85NZ7FLJEGWB36XYPR");
+	}
+	
+	@Override
+	protected void onStop() {
+		super.onStop();
+		FlurryAgent.onEndSession(this);
 	}
 	
 	private final class AsyncCursorLoader extends AsyncTask<String, Object, Cursor> {

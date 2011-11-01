@@ -26,6 +26,14 @@ public class ClassicoDatabase {
 	public static final String DATABASE_NAME = "/sdcard/Classico/classico.db";
 	public static final String TITLE_TABLE = "titles";
 	public static final String SCORE_TABLE = "scores";
+	public static final String RECENT_TITLES_TABLE = "recent_titles";
+	
+    public static final String rr = "CREATE TABLE bookedtime (" +
+	    " _id INTEGER PRIMARY KEY AUTOINCREMENT " +
+		", composition Text "+
+		", composer Text "+
+		", comp_id Text "+
+    ");";
 
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
 	private SQLiteDatabase mClassicoDatabase;
@@ -33,6 +41,13 @@ public class ClassicoDatabase {
 	public ClassicoDatabase() {
 		mClassicoDatabase = 
 			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
+	}
+	
+	public void createTable(final String tableName) {
+		SQLiteDatabase database = 
+			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READWRITE);
+		
+		database.execSQL();
 	}
 	
 	public void close() {
@@ -93,6 +108,10 @@ public class ClassicoDatabase {
 	
 	public Cursor getAllComposer(String[] columns) {
 		return query(null, null, columns, ORDER_BY_COMPOSER, ClassicoDatabase.KEY_COMPOSER);
+	}
+	
+	public Cursor getRecentTitles(String[] colums) {
+		return getCursor(table, columns, selection, selectionArgs)
 	}
 //	public Cursor getScores(String compId, String[] columns) {
 //		String selection = "comp_id = ?";

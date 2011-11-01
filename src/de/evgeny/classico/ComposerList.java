@@ -17,6 +17,8 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.TextView;
 
+import com.flurry.android.FlurryAgent;
+
 public class ComposerList extends GDListActivity {
 	
 	private static final String TAG = ComposerList.class.getSimpleName();
@@ -30,6 +32,18 @@ public class ComposerList extends GDListActivity {
 	
 	private Activity getActivity() {
 		return this;
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		FlurryAgent.onStartSession(this, "JE85NZ7FLJEGWB36XYPR");
+	}
+	
+	@Override
+	protected void onStop() {
+		super.onStop();
+		FlurryAgent.onEndSession(this);
 	}
 	
 	private final class AsyncCursorLoader extends AsyncTask<Object, Object, Cursor> {

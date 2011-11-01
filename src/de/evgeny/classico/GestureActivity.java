@@ -13,6 +13,8 @@ import java.util.HashMap;
 
 import org.apache.http.util.ByteArrayBuffer;
 
+import com.flurry.android.FlurryAgent;
+
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
@@ -130,6 +132,19 @@ public class GestureActivity extends Activity {
 	}
 	
 	@Override
+	protected void onStart() {
+		super.onStart();
+		FlurryAgent.onStartSession(this, "JE85NZ7FLJEGWB36XYPR");
+		FlurryAgent.onPageView();
+	}
+	
+	@Override
+	protected void onStop() {
+		super.onStop();
+		FlurryAgent.onEndSession(this);
+	}
+	
+	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		
@@ -197,6 +212,8 @@ public class GestureActivity extends Activity {
 		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 			try {
 				Log.d(TAG, "onFling(): ");
+				
+				FlurryAgent.logEvent("Fling event");
 				if (Math.abs(e1.getY() - e2.getY()) > SWIPE_MAX_OFF_PATH)
 					return false;
 				// right to left swipe
