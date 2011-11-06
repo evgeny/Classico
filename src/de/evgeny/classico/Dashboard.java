@@ -20,26 +20,32 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import com.flurry.android.FlurryAgent;
 
-public class Dashboard extends GDActivity {
+
+public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 
 	private static final String TAG = Dashboard.class.getSimpleName();
 	private static final String dbLink = 
 		"https://docs.google.com/uc?id=0B8p4GKsUuQg_ZThkNGQwNTktNTUzNy00ZmFmLWExMGUtNzE2YThlNTBmZDBj&export=download&hl=en_US";
 	
 	private File dbFile;
+	private SimpleCursorAdapter mRecentlyTitlesAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -58,16 +64,26 @@ public class Dashboard extends GDActivity {
 			new DownloadDialog(this).show();
 		}
 		
+		//recently showed compositions list
 		ListView recentlyShowed = (ListView) findViewById(R.id.recently_showed);
-		final TextView head = new TextView(this);
-		head.setText("Recently Showed");
-		recentlyShowed.addHeaderView(head);
-		RecentScoresAdapter scores = 
-			new RecentScoresAdapter(this,((ClassicoApplication)getApplication()).getScoresHistory());
 		
-		recentlyShowed.setAdapter(scores);
+		mRecentlyTitlesAdapter = new SimpleCursorAdapter(
+				this, android.R.layout.simple_list_item_2, null, 
+				new String[]{"composer", "composition"}, 
+				new int[]{android.R.id.text1, android.R.id.text2}, 0);
+				
+		recentlyShowed.setAdapter(mRecentlyTitlesAdapter);
 		
+        getLoaderManager().initLoader(0, null, this);
+        
 		onNewIntent(getIntent());
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		getLoaderManager().restartLoader(0, null, this);
 	}
 
 	@Override
@@ -142,8 +158,6 @@ public class Dashboard extends GDActivity {
 		intent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Composers");
 		startActivity(intent);
 	}
-	
-//	private ArrayList<S>
 	
 	private class DownloadDialog extends Dialog implements OnClickListener {
 
@@ -247,5 +261,21 @@ public class Dashboard extends GDActivity {
 			super.onProgressUpdate(values);
 			progressDialog.setProgress(values[0]);
 		}
+	}
+
+	@Override
+	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+		return new CursorLoader(this, ClassicoProvider.RECENT_TITLES_URI, null, null, null, "_id DESC");
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
+		mRecentlyTitlesAdapter.swapCursor(arg1);
+		
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> arg0) {
+		mRecentlyTitlesAdapter.swapCursor(null);
 	}
 }

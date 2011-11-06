@@ -71,7 +71,7 @@ public class ComposerList extends GDListActivity {
 		protected Cursor doInBackground(Object... params) {
 			Log.d(TAG, "doInBackground(): ");
 			
-			Cursor cursor = managedQuery(ComposerProvider.COMPOSER_URI, null, null, null, null);
+			Cursor cursor = managedQuery(ClassicoProvider.COMPOSER_URI, null, null, null, null);
 			Log.d(TAG, "" + cursor.getCount());
 			
 			return cursor;

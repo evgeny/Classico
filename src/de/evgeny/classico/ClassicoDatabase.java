@@ -3,10 +3,13 @@ package de.evgeny.classico;
 import java.util.HashMap;
 
 import android.app.SearchManager;
+import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 public class ClassicoDatabase {
 
@@ -28,11 +31,12 @@ public class ClassicoDatabase {
 	public static final String SCORE_TABLE = "scores";
 	public static final String RECENT_TITLES_TABLE = "recent_titles";
 	
-    public static final String rr = "CREATE TABLE bookedtime (" +
+    public static final String RECENT_TITLES_CREATE = 
+    	"CREATE TABLE IF NOT EXISTS recent_titles (" +
 	    " _id INTEGER PRIMARY KEY AUTOINCREMENT " +
 		", composition Text "+
 		", composer Text "+
-		", comp_id Text "+
+		", rate Integer "+
     ");";
 
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
@@ -40,15 +44,16 @@ public class ClassicoDatabase {
 
 	public ClassicoDatabase() {
 		mClassicoDatabase = 
-			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READONLY);
+			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READWRITE);
+		mClassicoDatabase.execSQL(RECENT_TITLES_CREATE);
 	}
 	
-	public void createTable(final String tableName) {
-		SQLiteDatabase database = 
-			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READWRITE);
-		
-		database.execSQL();
-	}
+//	public void createTable(final String tableName) {
+//		SQLiteDatabase database = 
+//			SQLiteDatabase.openDatabase(DATABASE_NAME, null, SQLiteDatabase.OPEN_READWRITE);
+//		
+//		database.execSQL(RECENT_TITLES_CREATE);
+//	}
 	
 	public void close() {
 		mClassicoDatabase.close();
@@ -88,13 +93,6 @@ public class ClassicoDatabase {
 		return cursor;
 	}
 	
-	/**
-	 * Returns a Cursor positioned at the word specified by rowId
-	 *
-	 * @param rowId id of word to retrieve
-	 * @param columns The columns to include, if null then all are included
-	 * @return Cursor positioned to matching word, or null if not found.
-	 */
 	public Cursor getComposer(String rowId, String[] columns) {
 		String selection = "rowid = ?";
 		String[] selectionArgs = new String[] {rowId};
@@ -110,9 +108,37 @@ public class ClassicoDatabase {
 		return query(null, null, columns, ORDER_BY_COMPOSER, ClassicoDatabase.KEY_COMPOSER);
 	}
 	
-	public Cursor getRecentTitles(String[] colums) {
-		return getCursor(table, columns, selection, selectionArgs)
+	public Cursor getRecentTitles() {
+		return getCursor(RECENT_TITLES_TABLE, null, null, null);
 	}
+	
+	public long persistTitle(final ContentValues values) {
+		long id = 0;
+		try {
+			id = mClassicoDatabase.insertWithOnConflict(RECENT_TITLES_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+		} catch (SQLException e) {
+			Log.w("db", "title wasn't inserted");
+		}
+		
+		return id;
+	}
+	
+//	public void persistTitle(final String composition, final String composer,
+//			final long comp_id, final long rate) {
+//		final ContentValues values = new ContentValues();
+//		values.put("_id", 0);
+//		values.put("composition", composition);
+//		values.put("composer", composer);
+//		values.put("comp_id", comp_id);
+//		values.put("rate", rate);
+//		
+//		try {
+//			final long id = 
+//				mClassicoDatabase.insertOrThrow(RECENT_TITLES_TABLE, null, values);
+//		} catch (SQLException e) {
+//			Log.w("db", "title wasn't inserted");
+//		}
+//	}
 //	public Cursor getScores(String compId, String[] columns) {
 //		String selection = "comp_id = ?";
 //		String[] selectionArgs = new String[] {compId};

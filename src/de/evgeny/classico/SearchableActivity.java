@@ -106,7 +106,7 @@ public class SearchableActivity extends GDActivity {
 	 * @param query The search query
 	 */
 	private void showResults(String query) {
-		Cursor cursor = managedQuery(ComposerProvider.CONTENT_URI, null, null,
+		Cursor cursor = managedQuery(ClassicoProvider.CONTENT_URI, null, null,
 				new String[] {query}, null);
 
 		if (cursor == null) {
@@ -136,7 +136,7 @@ public class SearchableActivity extends GDActivity {
 			mListView.setOnItemClickListener(new OnItemClickListener() {
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {				
 					final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);	
-					Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
+					Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
 							String.valueOf(id));
 					scoreIntent.setData(data);
 					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");

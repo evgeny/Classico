@@ -50,6 +50,7 @@ public class RecentScoresAdapter extends BaseAdapter {
 		
 		final Uri uri = Uri.parse(mData.get(position));
 		final Cursor cursor = mActivity.managedQuery(uri, null, null, null, null);
+		if (!cursor.moveToFirst()) Log.w(TAG, "getView");
 		
 		Log.d(TAG, cursor.getString(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER)));
 		Log.d(TAG, cursor.getString(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION)));

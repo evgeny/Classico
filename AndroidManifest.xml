@@ -57,7 +57,7 @@
         <activity android:name=".GestureActivity" 
             android:theme="@android:style/Theme.NoTitleBar" />
             
-        <provider android:name=".ComposerProvider"
+        <provider android:name=".ClassicoProvider"
             android:authorities="de.evgeny.classico.composerprovider"/>
                     
     </application>

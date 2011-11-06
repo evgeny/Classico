@@ -24,13 +24,13 @@
 		        android:layout_height="wrap_content"
 		        android:layout_width="0px"
 		        android:layout_weight="1"
-		        android:text="Ok" />
+		        android:text="Continue" />
 		        
 		<Button android:id="@+id/d_database_cancel"
 		        android:layout_height="wrap_content"
 		        android:layout_width="0px"
 		        android:layout_weight="1"
-		        android:text="Cancel" />
+		        android:text="Exit" />
 		                          
     </LinearLayout> 
     

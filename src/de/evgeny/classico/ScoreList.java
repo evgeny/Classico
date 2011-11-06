@@ -7,6 +7,7 @@ import java.util.HashMap;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
@@ -44,16 +45,28 @@ public class ScoreList extends GDActivity {
 
 		final Cursor cursor = managedQuery(uri, null, null, null, null);
 
-		((ClassicoApplication)getApplication()).addScoreToHistory(uri.toString());
-
-		if(cursor == null) {
-			finish();
-		} else {
-			cursor.moveToFirst();
+//		((ClassicoApplication)getApplication()).addScoreToHistory(uri.toString());
+		if (cursor.moveToFirst()) {
 			mCompositionId = cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
 			Log.d(TAG, "composition id = " + mCompositionId);
-			cursor.close();
+			
+			final String composition = cursor.getString(
+					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION));
+			final String composer = cursor.getString(
+					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
+
+			final ContentValues values = new ContentValues();
+			values.put("_id", 0);
+			values.put("composition", composition);
+			values.put("composer", composer);
+			values.put("comp_id", mCompositionId);
+			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
+						
+		} else {
+			finish();
 		}
+		
+		cursor.close();
 
 		new AsyncCursorLoader().execute(null);
 	}
@@ -100,7 +113,7 @@ public class ScoreList extends GDActivity {
 		protected Cursor doInBackground(String... params) {
 			Log.d(TAG, "doInBackground(): ");
 			Cursor cursor;
-			Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
+			Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
 					"imslp/" + String.valueOf(mCompositionId));
 
 			Log.d(TAG, "get imslp cursor for uri=" + data.toString());

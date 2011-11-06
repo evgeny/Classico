@@ -79,10 +79,10 @@ public class CompositionList extends GDListActivity {
 			Log.d(TAG, "doInBackground(): ");
 			Cursor cursor;
 			if (params == null) {
-				cursor = managedQuery(ComposerProvider.TITLES_URI, null, null, null, null);
+				cursor = managedQuery(ClassicoProvider.TITLES_URI, null, null, null, null);
 				Log.d(TAG, "" + cursor.getCount());
 			} else {
-				cursor = managedQuery(ComposerProvider.CONTENT_URI, null, null,
+				cursor = managedQuery(ClassicoProvider.CONTENT_URI, null, null,
 						new String[] {params[0]}, null); 
 			}
 			return cursor;
@@ -106,7 +106,7 @@ public class CompositionList extends GDListActivity {
 				public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 					Log.d(TAG, "onItemClick(): " + arg3);
 					final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);	
-					Uri data = Uri.withAppendedPath(ComposerProvider.CONTENT_URI,
+					Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
 							String.valueOf(arg3));
 					scoreIntent.setData(data);
 					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
