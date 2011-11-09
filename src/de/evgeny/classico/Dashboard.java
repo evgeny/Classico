@@ -21,6 +21,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -32,20 +33,24 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.flurry.android.FlurryAgent;
 
 
-public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
+public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private static final String TAG = Dashboard.class.getSimpleName();
 	private static final String dbLink = 
 		"https://docs.google.com/uc?id=0B8p4GKsUuQg_ZThkNGQwNTktNTUzNy00ZmFmLWExMGUtNzE2YThlNTBmZDBj&export=download&hl=en_US";
-	
+
 	private File dbFile;
 	private SimpleCursorAdapter mRecentlyTitlesAdapter;
+	private Dialog mDatabaseDialog;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -53,37 +58,30 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 
 		setActionBarContentView(R.layout.dashboard);
 		addActionBarItem(Type.Search, R.id.action_bar_search);
-
+		
 		//check if database exist
 		File dir = new File(Environment.getExternalStorageDirectory(),"Classico/");
 		if (!dir.exists()) dir.mkdir();
-		
+
 		dbFile = new File(dir, "classico.db");
 		if (!dbFile.exists() || !dbFile.canRead()) {
 			Log.d(TAG, "download database");
-			new DownloadDialog(this).show();
-		}
-		
-		//recently showed compositions list
-		ListView recentlyShowed = (ListView) findViewById(R.id.recently_showed);
-		
-		mRecentlyTitlesAdapter = new SimpleCursorAdapter(
-				this, android.R.layout.simple_list_item_2, null, 
-				new String[]{"composer", "composition"}, 
-				new int[]{android.R.id.text1, android.R.id.text2}, 0);
-				
-		recentlyShowed.setAdapter(mRecentlyTitlesAdapter);
-		
-        getLoaderManager().initLoader(0, null, this);
-        
+			mDatabaseDialog = new DownloadDialog(this);
+			mDatabaseDialog.show();
+		} else {			
+			fillRecentScoresList();
+		}				
+
 		onNewIntent(getIntent());
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
-		
-		getLoaderManager().restartLoader(0, null, this);
+
+		if ((mDatabaseDialog == null) || (!mDatabaseDialog.isShowing())) {
+			getLoaderManager().restartLoader(0, null, this);
+		}
 	}
 
 	@Override
@@ -106,21 +104,37 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 			startActivity(intent);
 		}
 	}
-	
+
 	@Override
 	protected void onStart() {
 		super.onStart();
-		
+
 		Log.d(TAG, "onStart(): ");
 		FlurryAgent.onStartSession(this, "JE85NZ7FLJEGWB36XYPR");
 		FlurryAgent.onPageView();
 	}
-	
+
 	@Override
 	protected void onStop() {
 		super.onStop();
-		
+
 		FlurryAgent.onEndSession(this);
+	}
+
+	private void fillRecentScoresList() {
+		Log.i(TAG, "fillRecentScoresList(): ");
+		
+		ListView recentlyShowed = (ListView) findViewById(R.id.recently_showed);
+
+		mRecentlyTitlesAdapter = new SimpleCursorAdapter(
+				this, android.R.layout.simple_list_item_2, null, 
+				new String[]{ClassicoDatabase.KEY_COMPOSER, ClassicoDatabase.KEY_COMPOSITION}, 
+				new int[]{android.R.id.text1, android.R.id.text2}, 0);
+
+		recentlyShowed.setAdapter(mRecentlyTitlesAdapter);
+		recentlyShowed.setOnItemClickListener(this);
+
+		getLoaderManager().initLoader(0, null, this);
 	}
 
 	@Override
@@ -158,7 +172,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 		intent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Composers");
 		startActivity(intent);
 	}
-	
+
 	private class DownloadDialog extends Dialog implements OnClickListener {
 
 		private Button cancelButton;
@@ -186,6 +200,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 				break;
 			case R.id.d_database_ok:
 				new DownloaderAsyncTask().execute(null);
+				//getLoaderManager().initLoader(arg0, arg1, arg2)
 				this.dismiss();
 				break;
 			default:
@@ -194,32 +209,32 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 		}
 	}
 
-	private class DownloaderAsyncTask extends AsyncTask<Object, Integer, Object> {
+	private class DownloaderAsyncTask extends AsyncTask<Object, Integer, Boolean> {
 
 		private ProgressDialog progressDialog;
-		
+
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
-			
+
 			progressDialog = new ProgressDialog(Dashboard.this);
 			progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-			progressDialog.setMessage("Be patient. Database downloading in progress.");
+			progressDialog.setMessage("Be patient. Database downloading is in progress.");
 			progressDialog.setCancelable(true);
 			progressDialog.setOnCancelListener(new OnCancelListener() {
-				
+
 				@Override
 				public void onCancel(DialogInterface dialog) {
 					dialog.cancel();
 					Dashboard.this.finish();
 				}
 			});
-			
+
 			progressDialog.show();
 		}
-		
+
 		@Override
-		protected Object doInBackground(Object... params) {
+		protected Boolean doInBackground(Object... params) {
 
 			URL url;
 			try {
@@ -244,18 +259,21 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 				out.close();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
+				return false;
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
-			return null;
+				return false;
+			} 
+			return true;
 		}
-		
+
 		@Override
-		protected void onPostExecute(Object result) {
+		protected void onPostExecute(Boolean result) {
 			super.onPostExecute(result);
 			progressDialog.dismiss();
+			fillRecentScoresList();
 		}
-		
+
 		@Override
 		protected void onProgressUpdate(Integer... values) {
 			super.onProgressUpdate(values);
@@ -271,11 +289,23 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>{
 	@Override
 	public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
 		mRecentlyTitlesAdapter.swapCursor(arg1);
-		
+
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
 		mRecentlyTitlesAdapter.swapCursor(null);
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+		// TODO Auto-generated method stub
+		Uri data = Uri.withAppendedPath(ClassicoProvider.RECENT_TITLES_URI,
+				String.valueOf(arg3));
+//		Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
+		final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
+		scoreIntent.setData(data);
+		scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
+		startActivity(scoreIntent);
 	}
 }

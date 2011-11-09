@@ -39,7 +39,8 @@ public class ClassicoProvider extends ContentProvider {
 	private static final int GET_ALL_TITLES = 5;
 	private static final int GET_ALL_COMPOSERS = 6;
 	private static final int GET_TITLE = 7;
-	private static final int GET_RECENT_TITLES = 8;
+	private static final int RECENT_TITLES = 8;
+	private static final int GET_RECENT_TITLE = 9;
 	private static final UriMatcher sURIMatcher = buildUriMatcher();
 
 
@@ -71,7 +72,9 @@ public class ClassicoProvider extends ContentProvider {
 		matcher.addURI(AUTHORITY, "classico/title", GET_ALL_TITLES);
 		matcher.addURI(AUTHORITY, "classico/title/#", GET_TITLE);
 		matcher.addURI(AUTHORITY, "classico/composer", GET_ALL_COMPOSERS);
-		matcher.addURI(AUTHORITY, "classico/recent_titles", GET_RECENT_TITLES);
+		matcher.addURI(AUTHORITY, "classico/recent_titles", RECENT_TITLES);
+		matcher.addURI(AUTHORITY, "classico/recent_titles/#", GET_RECENT_TITLE);
+		
 		return matcher;
 	}
 
@@ -100,7 +103,9 @@ public class ClassicoProvider extends ContentProvider {
 			return SearchManager.SHORTCUT_MIME_TYPE;
 		case GET_TITLE:
 			return COMPOSITION_MIME_TYPE;
-		case GET_RECENT_TITLES:
+		case RECENT_TITLES:
+			return COMPOSITION_MIME_TYPE;
+		case GET_RECENT_TITLE:
 			return COMPOSITION_MIME_TYPE;
 		default:
 			throw new IllegalArgumentException("Unknown URL " + uri);
@@ -110,7 +115,7 @@ public class ClassicoProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 		switch(sURIMatcher.match(uri)) {
-		case GET_RECENT_TITLES:
+		case RECENT_TITLES:
 			long rowId = mClassicoDatabase.persistTitle(values);
 			if (rowId > 0) {
 				Uri noteUri = ContentUris.withAppendedId(RECENT_TITLES_URI, rowId);
@@ -162,8 +167,10 @@ public class ClassicoProvider extends ContentProvider {
 			return getAllTitles(uri);
 		case GET_ALL_COMPOSERS:
 			return getAllComposers(uri);
-		case GET_RECENT_TITLES:
-			return getRecentTitles(uri);
+		case RECENT_TITLES:
+			return getAllRecentTitles(uri);
+		case GET_RECENT_TITLE:
+			return getRecentTitle(uri);
 		default:
 			throw new IllegalArgumentException("Unknown Uri: " + uri);
 		}
@@ -177,7 +184,6 @@ public class ClassicoProvider extends ContentProvider {
 				ClassicoDatabase.KEY_COMPOSITION,
 				SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID};
 
-		//return mClassico.getComposerMatches(query, columns);
 		return getDatabase().getComposerMatches(query, columns);
 	}
 
@@ -209,7 +215,7 @@ public class ClassicoProvider extends ContentProvider {
 		final String[] selectionArgs = new String[]{compId};
 
 		return getDatabase().getCursor(
-				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs);
+				ClassicoDatabase.SCORE_TABLE, columns, selection, selectionArgs, null);
 	}
 
 	private Cursor getAllTitles(Uri uri) {
@@ -232,12 +238,21 @@ public class ClassicoProvider extends ContentProvider {
 		return getDatabase().getAllComposer(columns);
 	}
 
-	private Cursor getRecentTitles(Uri uri) {
-		Log.d(TAG, "getRecentTitles(): ");
+	private Cursor getAllRecentTitles(Uri uri) {
+		Log.d(TAG, "getAllRecentTitles(): ");
 
 		return getDatabase().getRecentTitles();
 	}
 
+	private Cursor getRecentTitle(Uri uri) {
+		String id = uri.getLastPathSegment();
+		final String selection = "_id=?";
+		final String[] selectionArgs = new String[]{id};
+		
+		return getDatabase().getCursor(
+				ClassicoDatabase.RECENT_TITLES_TABLE, null, selection, selectionArgs, null);
+	}
+	
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {

@@ -25,6 +25,7 @@ public class ClassicoDatabase {
 		"cast(" + KEY_COMPOSITION_RATE + " as integer) DESC";
 	private static final String ORDER_BY_TITLE = KEY_COMPOSITION + " ASC";
 	private static final String ORDER_BY_COMPOSER = KEY_COMPOSER + " ASC";
+	private static final String ORDER_BY_ID = KEY_ID + " DESC";
 
 	public static final String DATABASE_NAME = "/sdcard/Classico/classico.db";
 	public static final String TITLE_TABLE = "titles";
@@ -34,9 +35,9 @@ public class ClassicoDatabase {
     public static final String RECENT_TITLES_CREATE = 
     	"CREATE TABLE IF NOT EXISTS recent_titles (" +
 	    " _id INTEGER PRIMARY KEY AUTOINCREMENT " +
-		", composition Text "+
-		", composer Text "+
-		", rate Integer "+
+		", " + KEY_COMPOSITION + " Text" +
+		", " + KEY_COMPOSER + " TEXT" +
+		", " + KEY_COMPOSITION_ID + " TEXT UNIQUE" +	
     ");";
 
 	private static final HashMap<String,String> mColumnMap = buildColumnMap();
@@ -79,11 +80,11 @@ public class ClassicoDatabase {
 	}
 	
 
-	public Cursor getCursor(String table, String[] columns, String selection, String[] selectionArgs) {
+	public Cursor getCursor(String table, String[] columns, String selection, String[] selectionArgs, String sortOrder) {
 		SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
 		builder.setTables(table);
 		Cursor cursor = builder.query(mClassicoDatabase,
-				columns, selection, selectionArgs, null, null, null);		
+				columns, selection, selectionArgs, null, null, sortOrder);		
 		if (cursor == null) {
 			return null;
 		} else if (!cursor.moveToFirst()) {
@@ -109,7 +110,7 @@ public class ClassicoDatabase {
 	}
 	
 	public Cursor getRecentTitles() {
-		return getCursor(RECENT_TITLES_TABLE, null, null, null);
+		return getCursor(RECENT_TITLES_TABLE, null, null, null, ORDER_BY_ID);
 	}
 	
 	public long persistTitle(final ContentValues values) {
@@ -122,29 +123,6 @@ public class ClassicoDatabase {
 		
 		return id;
 	}
-	
-//	public void persistTitle(final String composition, final String composer,
-//			final long comp_id, final long rate) {
-//		final ContentValues values = new ContentValues();
-//		values.put("_id", 0);
-//		values.put("composition", composition);
-//		values.put("composer", composer);
-//		values.put("comp_id", comp_id);
-//		values.put("rate", rate);
-//		
-//		try {
-//			final long id = 
-//				mClassicoDatabase.insertOrThrow(RECENT_TITLES_TABLE, null, values);
-//		} catch (SQLException e) {
-//			Log.w("db", "title wasn't inserted");
-//		}
-//	}
-//	public Cursor getScores(String compId, String[] columns) {
-//		String selection = "comp_id = ?";
-//		String[] selectionArgs = new String[] {compId};
-//
-//		return query(selection, selectionArgs, columns);
-//	}
 
 	/**
 	 * Returns a Cursor over all words that match the given query

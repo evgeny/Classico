@@ -56,10 +56,9 @@ public class ScoreList extends GDActivity {
 					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
 
 			final ContentValues values = new ContentValues();
-			values.put("_id", 0);
-			values.put("composition", composition);
-			values.put("composer", composer);
-			values.put("comp_id", mCompositionId);
+			values.put(ClassicoDatabase.KEY_COMPOSITION, composition);
+			values.put(ClassicoDatabase.KEY_COMPOSER, composer);
+			values.put(ClassicoDatabase.KEY_COMPOSITION_ID, mCompositionId);
 			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
 						
 		} else {
