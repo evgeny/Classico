@@ -4,31 +4,29 @@ import greendroid.app.GDActivity;
 
 import java.util.HashMap;
 
-import android.app.Activity;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.ContentValues;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 
 import com.flurry.android.FlurryAgent;
 
-public class ScoreList extends GDActivity {
+public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private final static String TAG = ScoreList.class.getSimpleName();
 	private int mCompositionId;
 	private ListView mListView;
+	private SimpleCursorAdapter mScoresAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +43,6 @@ public class ScoreList extends GDActivity {
 
 		final Cursor cursor = managedQuery(uri, null, null, null, null);
 
-//		((ClassicoApplication)getApplication()).addScoreToHistory(uri.toString());
 		if (cursor.moveToFirst()) {
 			mCompositionId = cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
 			Log.d(TAG, "composition id = " + mCompositionId);
@@ -60,18 +57,39 @@ public class ScoreList extends GDActivity {
 			values.put(ClassicoDatabase.KEY_COMPOSER, composer);
 			values.put(ClassicoDatabase.KEY_COMPOSITION_ID, mCompositionId);
 			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
-						
+			
+			//send flurry report
+			final HashMap<String, String> paramsMap = new HashMap<String, String>();
+			paramsMap.put("title", composition);
+			FlurryAgent.onEvent("imslp selected", paramsMap);
 		} else {
 			finish();
 		}
 		
 		cursor.close();
 
-		new AsyncCursorLoader().execute(null);
+		fillScoresList();
 	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		getLoaderManager().initLoader(0, null, this);
+	}
+	
+	private void fillScoresList() {
+		Log.i(TAG, "fillRecentScoresList(): ");
+		
+		mScoresAdapter = new SimpleCursorAdapter(
+				this, android.R.layout.simple_list_item_1, null, 
+				new String[]{"imslp", "pages"}, 
+				new int[]{android.R.id.text1}, 0);
 
-	private Activity getActivity() {
-		return this;
+		mListView.setAdapter(mScoresAdapter);
+		mListView.setOnItemClickListener(this);
+
+		getLoaderManager().initLoader(0, null, this);
 	}
 
 	@Override
@@ -87,66 +105,37 @@ public class ScoreList extends GDActivity {
 		FlurryAgent.onEndSession(this);
 	}
 
-	private final class AsyncCursorLoader extends AsyncTask<String, Object, Cursor> {
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+		final Cursor cursor = ((SimpleCursorAdapter)arg0.getAdapter()).getCursor();
+		cursor.moveToPosition(arg2);
+		final Intent partitureViewer = new Intent(getApplicationContext(), GestureActivity.class);
 
-		private Dialog waitingDialog;
+		//send flurry report
+		final HashMap<String, String> paramsMap = new HashMap<String, String>();
+		paramsMap.put("imslp", cursor.getString(cursor.getColumnIndex("imslp")));
+		FlurryAgent.onEvent("imslp selected", paramsMap);
+		partitureViewer.putExtra("imslp", cursor.getString(cursor.getColumnIndex("imslp")));
+		partitureViewer.putExtra("pages", cursor.getInt(cursor.getColumnIndex("pages")));
+		startActivity(partitureViewer);
+	}
 
-		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
+	@Override
+	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+		Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
+				"imslp/" + String.valueOf(mCompositionId));
 
-			Log.d(TAG, "onPreExecute()");
-			waitingDialog = ProgressDialog.show(getActivity(), "Wait", 
-					"Query database. Please wait...", true);
-			waitingDialog.setCancelable(true);
-			waitingDialog.setOnCancelListener(new OnCancelListener() {
+		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
+		return new CursorLoader(ScoreList.this, data, null, null, null, null);
+	}
 
-				@Override
-				public void onCancel(DialogInterface dialog) {
-					getActivity().finish();
-				}
-			});
-		}
+	@Override
+	public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
+		mScoresAdapter.swapCursor(arg1);
+	}
 
-		@Override
-		protected Cursor doInBackground(String... params) {
-			Log.d(TAG, "doInBackground(): ");
-			Cursor cursor;
-			Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
-					"imslp/" + String.valueOf(mCompositionId));
-
-			Log.d(TAG, "get imslp cursor for uri=" + data.toString());
-			cursor = managedQuery(data, null, null, null, null);
-			return cursor;
-		}
-
-		@Override
-		protected void onPostExecute(final Cursor cursor) {
-			super.onPostExecute(cursor);
-
-			Log.d(TAG, "omPostExecute");
-			String[] from = new String[] { "imslp", "pages" };
-
-			SimpleCursorAdapter scoresAdapter = new SimpleCursorAdapter(getActivity(),
-					android.R.layout.simple_list_item_1, cursor, from, new int[]{android.R.id.text1});
-
-			mListView.setAdapter(scoresAdapter);
-
-			mListView.setOnItemClickListener(new OnItemClickListener() {
-				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-					cursor.moveToPosition(position);
-					final Intent partitureViewer = new Intent(getApplicationContext(), GestureActivity.class);
-
-					//send flurry report
-					final HashMap<String, String> paramsMap = new HashMap<String, String>();
-					paramsMap.put("imslp", cursor.getString(cursor.getColumnIndex("imslp")));
-					FlurryAgent.onEvent("imslp selected", paramsMap);
-					partitureViewer.putExtra("imslp", cursor.getString(cursor.getColumnIndex("imslp")));
-					partitureViewer.putExtra("pages", cursor.getInt(cursor.getColumnIndex("pages")));
-					startActivity(partitureViewer);
-				}
-			});
-			waitingDialog.dismiss();
-		}
+	@Override
+	public void onLoaderReset(Loader<Cursor> arg0) {
+		mScoresAdapter.swapCursor(null);
 	}
 }
