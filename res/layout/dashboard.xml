@@ -14,13 +14,16 @@
             style="@style/HomeButton"
             android:drawableTop="@drawable/composer128"
             android:onClick="onComposersClick"
-            android:text="Composers" />
+            android:text="Composers" 
+            android:textColor="@android:color/white"/>
 
         <Button
             style="@style/HomeButton"
             android:drawableTop="@drawable/scores128"
             android:onClick="onScoresClick"
-            android:text="Scores" />
+            android:text="Scores"
+            android:textColor="@android:color/white" />
+        
     </LinearLayout>
 
     <LinearLayout
