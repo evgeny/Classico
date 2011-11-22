@@ -10,7 +10,7 @@
     <application android:icon="@drawable/imslp" 
         android:label="@string/app_name"
         android:name="de.evgeny.classico.ClassicoApplication"
-        android:theme="@style/Theme.GreenDroid.NoTitleBar">
+        android:theme="@style/Theme.Classico">
     
         <activity android:name=".SearchableActivity"
                   android:label="@string/app_name"

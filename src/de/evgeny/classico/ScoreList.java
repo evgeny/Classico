@@ -1,6 +1,8 @@
 package de.evgeny.classico;
 
 import greendroid.app.GDActivity;
+import greendroid.widget.ActionBarItem;
+import greendroid.widget.ActionBarItem.Type;
 
 import java.util.HashMap;
 
@@ -27,6 +29,7 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 	private int mCompositionId;
 	private ListView mListView;
 	private SimpleCursorAdapter mScoresAdapter;
+	private String mComposition;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +37,8 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 		Log.d(TAG, "onCreate()");
 
 		setActionBarContentView(R.layout.scores);
+		
+		addActionBarItem(Type.Share);
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
@@ -47,20 +52,20 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 			mCompositionId = cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
 			Log.d(TAG, "composition id = " + mCompositionId);
 			
-			final String composition = cursor.getString(
+			mComposition = cursor.getString(
 					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION));
 			final String composer = cursor.getString(
 					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
 
 			final ContentValues values = new ContentValues();
-			values.put(ClassicoDatabase.KEY_COMPOSITION, composition);
+			values.put(ClassicoDatabase.KEY_COMPOSITION, mComposition);
 			values.put(ClassicoDatabase.KEY_COMPOSER, composer);
 			values.put(ClassicoDatabase.KEY_COMPOSITION_ID, mCompositionId);
 			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
 			
 			//send flurry report
 			final HashMap<String, String> paramsMap = new HashMap<String, String>();
-			paramsMap.put("title", composition);
+			paramsMap.put("title", mComposition);
 			FlurryAgent.onEvent("imslp selected", paramsMap);
 		} else {
 			finish();
@@ -78,6 +83,24 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 		getLoaderManager().initLoader(0, null, this);
 	}
 	
+	@Override
+	public boolean onHandleActionBarItemClick(ActionBarItem item, int position) {
+		switch (position) {
+		case 0:
+			Log.d(TAG, "Share score");
+			final String shareString = getString(R.string.share_message, mComposition);
+//				getString(R.string.share_template, mTitleString, getHashtagsString(), mUrl);
+	        final Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TEXT, shareString);
+            startActivity(Intent.createChooser(intent, getText(R.string.title_share)));
+			break;
+		default:
+			break;
+		}
+		return super.onHandleActionBarItemClick(item, position);
+	}
+    
 	private void fillScoresList() {
 		Log.i(TAG, "fillRecentScoresList(): ");
 		

@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>    
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
     <string name="app_name">Classico</string>
-    
     <string name="search_label">Classico</string>
     <string name="search_hint">Search the compositions</string>
-    
     <string name="settings_description">Composer and their works</string>
     <string name="global">Search nonsense words</string>
     <string name="search_instructions">This applicaton is offline version of Petrucci Music Library.
     Now in our database over 30000 Partitured. 
     Press the search key to look up a word</string>
     <string name="search_results">Search results for </string>
-    
-	<string name="no_results">No results found for \"%s\"</string>
-      
-	<plurals name="search_results">
-		<item quantity="one">%1$d result for \"%2$s\": </item>
-      	<item quantity="other">%1$d results for \"%2$s\": </item>
+    <string name="no_results">No results found for \"%s\"</string>
+
+    <plurals name="search_results">
+        <item quantity="one">%1$d result for \"%2$s\": </item>
+        <item quantity="other">%1$d results for \"%2$s\": </item>
     </plurals>
-    
+
     <!-- menu items -->
     <string name="menu_exit">Exit</string>
     <string name="menu_search">Search</string>
-    
     <string name="no_scores">no scores founded</string>
-    
+
     <!-- donwload dialog -->
     <string name="download_dialog_text">To use this application, you must download the database!</string>
-    
+
+    <!-- score activity -->
+    <string name="title_share">Share using</string>
+    <string name="share_message">I found this partiture \'<xliff:g id="title">%1$s</xliff:g>\' in Classico-App</string>
+<!--     <string name="share_template">Checking out \'<xliff:g id="title">%1$s</xliff:g>\' at <xliff:g id="hashtags">%2$s</xliff:g><xliff:g id="url">%3$s</xliff:g></string> -->
+
 </resources>
