@@ -34,7 +34,6 @@ import com.flurry.android.FlurryAgent;
 public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private final static String TAG = ScoreList.class.getSimpleName();
-//	private int mCompositionId;
 	private ListView mListView;
 	private SimpleCursorAdapter mScoresAdapter;
 	private String mComposition;
@@ -50,50 +49,9 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
-
-//		Uri uri = getIntent().getData();
-//		Log.d(TAG, "uri=" + uri);
-
-//		final Cursor cursor = managedQuery(uri, null, null, null, null);
-
-//		if (cursor.moveToFirst()) {
-//			mCompositionId = cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
-//			Log.d(TAG, "composition id = " + mCompositionId);
-//			
-//			mComposition = cursor.getString(
-//					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION));
-//			final String composer = cursor.getString(
-//					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
-//
-//			final ContentValues values = new ContentValues();
-//			values.put(ClassicoDatabase.KEY_COMPOSITION, mComposition);
-//			values.put(ClassicoDatabase.KEY_COMPOSER, composer);
-//			values.put(ClassicoDatabase.KEY_COMPOSITION_ID, mCompositionId);
-//			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
-//			
-//			//send flurry report
-//			final HashMap<String, String> paramsMap = new HashMap<String, String>();
-//			paramsMap.put("title", mComposition);
-//			FlurryAgent.onEvent("imslp selected", paramsMap);
-//		} else {
-//			finish();
-//		}
-//		
-//		cursor.close();
-
-//		fillScoresList();
-//		
-//		getExtras();
 		
 		getLoaderManager().initLoader(2, null, this);
 	}
-	
-//	@Override
-//	protected void onResume() {
-//		super.onResume();
-//		
-//		getLoaderManager().initLoader(1, null, this);
-//	}
 	
 	@Override
 	public boolean onHandleActionBarItemClick(ActionBarItem item, int position) {
@@ -199,7 +157,7 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 				values.put(ClassicoDatabase.KEY_COMPOSITION_ID, compositionId);
 				getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
 				
-				cursor.close();
+//				cursor.close();
 				
 				fillScoresList(compositionId);
 				getExtras();
@@ -219,6 +177,7 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
+		Log.d(TAG, "onLoaderReset()...");
 		switch (arg0.getId()) {
 		case 1:
 			mScoresAdapter.swapCursor(null);
