@@ -4,7 +4,14 @@ import greendroid.app.GDActivity;
 import greendroid.widget.ActionBarItem;
 import greendroid.widget.ActionBarItem.Type;
 
+import java.io.IOException;
 import java.util.HashMap;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.content.ContentValues;
 import android.content.Intent;
@@ -15,6 +22,7 @@ import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -26,7 +34,7 @@ import com.flurry.android.FlurryAgent;
 public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private final static String TAG = ScoreList.class.getSimpleName();
-	private int mCompositionId;
+//	private int mCompositionId;
 	private ListView mListView;
 	private SimpleCursorAdapter mScoresAdapter;
 	private String mComposition;
@@ -43,45 +51,49 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 
-		Uri uri = getIntent().getData();
-		Log.d(TAG, "uri=" + uri);
+//		Uri uri = getIntent().getData();
+//		Log.d(TAG, "uri=" + uri);
 
-		final Cursor cursor = managedQuery(uri, null, null, null, null);
+//		final Cursor cursor = managedQuery(uri, null, null, null, null);
 
-		if (cursor.moveToFirst()) {
-			mCompositionId = cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
-			Log.d(TAG, "composition id = " + mCompositionId);
-			
-			mComposition = cursor.getString(
-					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION));
-			final String composer = cursor.getString(
-					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
+//		if (cursor.moveToFirst()) {
+//			mCompositionId = cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
+//			Log.d(TAG, "composition id = " + mCompositionId);
+//			
+//			mComposition = cursor.getString(
+//					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION));
+//			final String composer = cursor.getString(
+//					cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
+//
+//			final ContentValues values = new ContentValues();
+//			values.put(ClassicoDatabase.KEY_COMPOSITION, mComposition);
+//			values.put(ClassicoDatabase.KEY_COMPOSER, composer);
+//			values.put(ClassicoDatabase.KEY_COMPOSITION_ID, mCompositionId);
+//			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
+//			
+//			//send flurry report
+//			final HashMap<String, String> paramsMap = new HashMap<String, String>();
+//			paramsMap.put("title", mComposition);
+//			FlurryAgent.onEvent("imslp selected", paramsMap);
+//		} else {
+//			finish();
+//		}
+//		
+//		cursor.close();
 
-			final ContentValues values = new ContentValues();
-			values.put(ClassicoDatabase.KEY_COMPOSITION, mComposition);
-			values.put(ClassicoDatabase.KEY_COMPOSER, composer);
-			values.put(ClassicoDatabase.KEY_COMPOSITION_ID, mCompositionId);
-			getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
-			
-			//send flurry report
-			final HashMap<String, String> paramsMap = new HashMap<String, String>();
-			paramsMap.put("title", mComposition);
-			FlurryAgent.onEvent("imslp selected", paramsMap);
-		} else {
-			finish();
-		}
+//		fillScoresList();
+//		
+//		getExtras();
 		
-		cursor.close();
-
-		fillScoresList();
+		getLoaderManager().initLoader(2, null, this);
 	}
 	
-	@Override
-	protected void onResume() {
-		super.onResume();
-		
-		getLoaderManager().initLoader(0, null, this);
-	}
+//	@Override
+//	protected void onResume() {
+//		super.onResume();
+//		
+//		getLoaderManager().initLoader(1, null, this);
+//	}
 	
 	@Override
 	public boolean onHandleActionBarItemClick(ActionBarItem item, int position) {
@@ -101,7 +113,7 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 		return super.onHandleActionBarItemClick(item, position);
 	}
     
-	private void fillScoresList() {
+	private void fillScoresList(final int compositionId) {
 		Log.i(TAG, "fillRecentScoresList(): ");
 		
 		mScoresAdapter = new SimpleCursorAdapter(
@@ -112,7 +124,9 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 		mListView.setAdapter(mScoresAdapter);
 		mListView.setOnItemClickListener(this);
 
-		getLoaderManager().initLoader(0, null, this);
+		final Bundle bundle = new Bundle();
+		bundle.putInt("compositionId", compositionId);
+		getLoaderManager().initLoader(1, bundle, this);
 	}
 
 	@Override
@@ -144,21 +158,95 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 	}
 
 	@Override
-	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-		Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
-				"imslp/" + String.valueOf(mCompositionId));
-
-		Log.d(TAG, "get imslp cursor for uri=" + data.toString());
-		return new CursorLoader(ScoreList.this, data, null, null, null, null);
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		switch (id) {
+		case 1:
+			final int compositonId = args.getInt("compositionId");
+			Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
+					"imslp/" + String.valueOf(compositonId));
+			Log.d(TAG, "get imslp cursor for uri=" + data.toString());
+			return new CursorLoader(ScoreList.this, data, null, null, null, null);	
+			
+		case 2: 
+			Uri uri = getIntent().getData();
+			Log.d(TAG, "uri=" + uri);			
+			return new CursorLoader(ScoreList.this, uri, null, null, null, null);
+		default:
+			return null;
+		}
 	}
 
 	@Override
-	public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
-		mScoresAdapter.swapCursor(arg1);
+	public void onLoadFinished(Loader<Cursor> arg0, Cursor cursor) {
+		switch (arg0.getId()) {
+		case 1:
+			mScoresAdapter.swapCursor(cursor);
+			break;
+		case 2:
+			if (cursor.moveToFirst()) {
+				final int compositionId = 
+					cursor.getInt(cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION_ID));
+				Log.d(TAG, "composition id = " + compositionId);
+				
+				mComposition = cursor.getString(
+						cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSITION));
+				final String composer = cursor.getString(
+						cursor.getColumnIndexOrThrow(ClassicoDatabase.KEY_COMPOSER));
+
+				final ContentValues values = new ContentValues();
+				values.put(ClassicoDatabase.KEY_COMPOSITION, mComposition);
+				values.put(ClassicoDatabase.KEY_COMPOSER, composer);
+				values.put(ClassicoDatabase.KEY_COMPOSITION_ID, compositionId);
+				getContentResolver().insert(ClassicoProvider.RECENT_TITLES_URI, values);
+				
+				cursor.close();
+				
+				fillScoresList(compositionId);
+				getExtras();
+				
+				//send flurry report
+				final HashMap<String, String> paramsMap = new HashMap<String, String>();
+				paramsMap.put("title", mComposition);
+				FlurryAgent.onEvent("imslp selected", paramsMap);
+			} else {
+				cursor.close();
+				finish();
+			}
+			
+			break;
+		}
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
-		mScoresAdapter.swapCursor(null);
+		switch (arg0.getId()) {
+		case 1:
+			mScoresAdapter.swapCursor(null);
+			break;
+		case 2:
+			arg0.reset();
+			break;
+		}
 	}
+	
+	private void getExtras() {
+		
+		String uri = "http://www.imslp.org/imslpscripts/API.ISCR.php?disclaimer=accepted/account=testaccount/type=3/parent=RsO8ciBFbGlzZSwgV29PIDU5IChCZWV0aG92ZW4sIEx1ZHdpZyB2YW4p"
+			+ Base64.encodeToString(mComposition.getBytes(), Base64.URL_SAFE | Base64.NO_WRAP);
+
+		HttpGet request = new HttpGet(uri);
+		
+		final HttpClient client = new DefaultHttpClient();
+		HttpResponse response;
+		
+		Log.i(TAG, request.getURI().toString());
+		try {
+			response = client.execute(request);
+			Log.i(TAG, response.toString());
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+	}	
 }

@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
@@ -57,7 +58,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 		setActionBarContentView(R.layout.dashboard);
 		addActionBarItem(Type.Search, R.id.action_bar_search);
-		
+
 		//check if database exist
 		File dir = new File(Environment.getExternalStorageDirectory(),"Classico/");
 		if (!dir.exists()) dir.mkdir();
@@ -122,7 +123,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 	private void fillRecentScoresList() {
 		Log.i(TAG, "fillRecentScoresList(): ");
-		
+
 		ListView recentlyShowed = (ListView) findViewById(R.id.recently_showed);
 
 		mRecentlyTitlesAdapter = new SimpleCursorAdapter(
@@ -270,7 +271,11 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 		protected void onPostExecute(Boolean result) {
 			super.onPostExecute(result);
 			progressDialog.dismiss();
-			fillRecentScoresList();
+			if (result) {
+				fillRecentScoresList();
+			} else {
+				createAlertDialog();
+			}
 		}
 
 		@Override
@@ -301,10 +306,29 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 		// TODO Auto-generated method stub
 		Uri data = Uri.withAppendedPath(ClassicoProvider.RECENT_TITLES_URI,
 				String.valueOf(arg3));
-//		Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
+		//		Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
 		final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
 		scoreIntent.setData(data);
 		scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
 		startActivity(scoreIntent);
+	}
+	
+	private void createAlertDialog() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage("A problem occur by loading database. Would you try again?")
+		.setCancelable(false)
+		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				new DownloaderAsyncTask().execute(null);
+			}
+		})
+		.setNegativeButton("No", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.cancel();
+				finish();
+			}
+		});
+		AlertDialog alert = builder.create();
+		alert.show();
 	}
 }
