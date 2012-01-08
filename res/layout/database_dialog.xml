@@ -11,26 +11,26 @@
 	          android:textColor="#FFF"
 	          android:text="@string/download_dialog_text"
 	          android:drawableLeft="@drawable/imslp"
-	          android:drawablePadding="20px"/>
+	          android:drawablePadding="20dp"/>
 	          
 	<LinearLayout android:id="@+id/layout_second"
 	              android:orientation="horizontal"
 	              android:layout_width="fill_parent"
 	              android:layout_height="0px"
 	              android:layout_weight="1"
-                  android:paddingTop="30px" >
+                  android:paddingTop="30dp" >
                   
 		<Button android:id="@+id/d_database_ok"
 		        android:layout_height="wrap_content"
 		        android:layout_width="0px"
 		        android:layout_weight="1"
-		        android:text="Continue" />
+		        android:text="@string/btn_db_dialog_continue" />
 		        
 		<Button android:id="@+id/d_database_cancel"
 		        android:layout_height="wrap_content"
 		        android:layout_width="0px"
 		        android:layout_weight="1"
-		        android:text="Exit" />
+		        android:text="@string/btn_db_dialog_exit" />
 		                          
     </LinearLayout> 
     

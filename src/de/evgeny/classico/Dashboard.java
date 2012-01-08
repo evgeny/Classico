@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -217,6 +218,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 		protected void onPreExecute() {
 			super.onPreExecute();
 
+			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
 			progressDialog = new ProgressDialog(Dashboard.this);
 			progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 			progressDialog.setMessage("Be patient. Database downloading is in progress.");
@@ -276,6 +278,8 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 			} else {
 				createAlertDialog();
 			}
+			
+			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 		}
 
 		@Override
