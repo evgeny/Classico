@@ -58,7 +58,7 @@ public class SearchableActivity extends GDActivity {
 			// handles a click on a search suggestion; launches activity to show composition			
 			final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
 			scoreIntent.setData(intent.getData());
-			scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
+			scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 			startActivity(scoreIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
@@ -139,7 +139,7 @@ public class SearchableActivity extends GDActivity {
 					Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
 							String.valueOf(id));
 					scoreIntent.setData(data);
-					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
+					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 					startActivity(scoreIntent);
 				}
 			});

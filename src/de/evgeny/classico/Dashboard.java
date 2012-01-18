@@ -95,7 +95,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 			// handles a click on a search suggestion; launches activity to show composition			
 			final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
 			scoreIntent.setData(intent.getData());
-			scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
+			scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 			startActivity(scoreIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
@@ -313,7 +313,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 		//		Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
 		final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
 		scoreIntent.setData(data);
-		scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
+		scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 		startActivity(scoreIntent);
 	}
 	
@@ -334,5 +334,13 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 		});
 		AlertDialog alert = builder.create();
 		alert.show();
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		
+		if (mRecentlyTitlesAdapter.getCursor() != null)
+			mRecentlyTitlesAdapter.getCursor().close();
 	}
 }

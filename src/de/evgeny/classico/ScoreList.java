@@ -29,6 +29,7 @@ import com.flurry.android.FlurryAgent;
 public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private final static String TAG = ScoreList.class.getSimpleName();
+	public final static String TITLE = "Scores";
 	private ListView mListView;
 	private SimpleCursorAdapter mScoresAdapter;
 	private String mComposition;
@@ -76,7 +77,6 @@ public class ScoreList extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 		mListView.setAdapter(mScoresAdapter);
 		mListView.setOnItemClickListener(this);
-
 		final Bundle bundle = new Bundle();
 		bundle.putInt("compositionId", compositionId);
 		getLoaderManager().initLoader(1, bundle, this);

@@ -109,7 +109,7 @@ public class CompositionList extends GDListActivity {
 					Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
 							String.valueOf(arg3));
 					scoreIntent.setData(data);
-					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Score List");
+					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 					startActivity(scoreIntent);
 				}
 			});
