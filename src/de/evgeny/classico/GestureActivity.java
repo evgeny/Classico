@@ -363,7 +363,7 @@ public class GestureActivity extends Activity {
 		final Display display = getWindowManager().getDefaultDisplay(); 
 		final String url = WEB_SERVER + mImslp
 		+ "&page=" + pageNumber
-		+ "&h=" + display.getHeight();
+		+ "&w=" + display.getWidth();
 		 
 		Log.d(TAG, "load page "+ pageNumber +" from url: " + url);
 		return url;
