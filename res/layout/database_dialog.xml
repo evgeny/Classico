@@ -10,7 +10,7 @@
 	          android:layout_height="fill_parent"
 	          android:textColor="#FFF"
 	          android:text="@string/download_dialog_text"
-	          android:drawableLeft="@drawable/imslp"
+	          android:drawableLeft="@drawable/ic_home"
 	          android:drawablePadding="20dp"/>
 	          
 	<LinearLayout android:id="@+id/layout_second"

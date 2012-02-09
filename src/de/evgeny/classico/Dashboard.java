@@ -1,10 +1,5 @@
 package de.evgeny.classico;
 
-import greendroid.app.ActionBarActivity;
-import greendroid.app.GDActivity;
-import greendroid.widget.ActionBarItem;
-import greendroid.widget.ActionBarItem.Type;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,12 +21,15 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
+import android.support.v4.actionbar.ActionBarActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -39,15 +37,21 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.flurry.android.FlurryAgent;
 
-
-public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, OnItemClickListener {
+/**
+ * Start screen of classico app. Show recently partiture.
+ * 
+ * @author Evgeny Zinovyev
+ *
+ */
+public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Cursor>,
+		OnItemClickListener {
 
 	private static final String TAG = Dashboard.class.getSimpleName();
-	private static final String dbLink = 
-		"https://docs.google.com/uc?id=0B8p4GKsUuQg_ZThkNGQwNTktNTUzNy00ZmFmLWExMGUtNzE2YThlNTBmZDBj&export=download&hl=en_US";
+	private static final String dbLink = "https://docs.google.com/uc?id=0B8p4GKsUuQg_ZThkNGQwNTktNTUzNy00ZmFmLWExMGUtNzE2YThlNTBmZDBj&export=download&hl=en_US";
 
 	private File dbFile;
 	private SimpleCursorAdapter mRecentlyTitlesAdapter;
@@ -57,21 +61,18 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setActionBarContentView(R.layout.dashboard);
-		addActionBarItem(Type.Search, R.id.action_bar_search);
+		setContentView(R.layout.dashboard);
 
-		//check if database exist
-		File dir = new File(Environment.getExternalStorageDirectory(),"Classico/");
-		if (!dir.exists()) dir.mkdir();
-
-		dbFile = new File(dir, "classico.db");
+		// check if database exist
+		dbFile = new File(getApplication().getApplicationContext().getExternalCacheDir(),
+				"classico.db");
 		if (!dbFile.exists() || !dbFile.canRead()) {
 			Log.d(TAG, "download database");
 			mDatabaseDialog = new DownloadDialog(this);
 			mDatabaseDialog.show();
-		} else {			
+		} else {
 			fillRecentScoresList();
-		}				
+		}
 
 		onNewIntent(getIntent());
 	}
@@ -81,7 +82,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 		super.onResume();
 
 		if ((mDatabaseDialog == null) || (!mDatabaseDialog.isShowing())) {
-			getLoaderManager().restartLoader(0, null, this);
+			getSupportLoaderManager().restartLoader(0, null, this);
 		}
 	}
 
@@ -92,10 +93,10 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 		if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 			Log.d(TAG, "ACTION_VIEW");
-			// handles a click on a search suggestion; launches activity to show composition			
-			final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
+			// handles a click on a search suggestion; launches activity to show
+			// composition
+			final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);
 			scoreIntent.setData(intent.getData());
-			scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 			startActivity(scoreIntent);
 		} else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
 			// handles a search query
@@ -127,28 +128,51 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 		ListView recentlyShowed = (ListView) findViewById(R.id.recently_showed);
 
-		mRecentlyTitlesAdapter = new SimpleCursorAdapter(
-				this, android.R.layout.simple_list_item_2, null, 
-				new String[]{ClassicoDatabase.KEY_COMPOSER, ClassicoDatabase.KEY_COMPOSITION}, 
-				new int[]{android.R.id.text1, android.R.id.text2}, 0);
+		mRecentlyTitlesAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2,
+				null, new String[] { ClassicoDatabase.KEY_COMPOSER,
+						ClassicoDatabase.KEY_COMPOSITION }, new int[] { android.R.id.text1,
+						android.R.id.text2 }, 0);
 
 		recentlyShowed.setAdapter(mRecentlyTitlesAdapter);
 		recentlyShowed.setOnItemClickListener(this);
 
-		getLoaderManager().initLoader(0, null, this);
+		getSupportLoaderManager().initLoader(0, null, this);
 	}
 
 	@Override
-	public boolean onHandleActionBarItemClick(ActionBarItem item, int position) {			
-		switch (item.getItemId()) {                
-		case R.id.action_bar_search:
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater menuInflater = getMenuInflater();
+		menuInflater.inflate(R.menu.main, menu);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case android.R.id.home:
+			Toast.makeText(this, "Tapped home", Toast.LENGTH_SHORT).show();
+			break;
+
+		case R.id.menu_search:
 			onSearchRequested();
 			break;
-		default:
-			return super.onHandleActionBarItemClick(item, position);
+
 		}
-		return true;
+		return super.onOptionsItemSelected(item);
 	}
+
+	// @Override
+	// public boolean onHandleActionBarItemClick(ActionBarItem item, int
+	// position) {
+	// switch (item.getItemId()) {
+	// case R.id.action_bar_search:
+	// onSearchRequested();
+	// break;
+	// default:
+	// return super.onHandleActionBarItemClick(item, position);
+	// }
+	// return true;
+	// }
 
 	public void onSearchButtonClick(final View view) {
 		onSearchRequested();
@@ -163,14 +187,12 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 	}
 
 	public void onScoresClick(View view) {
-		final Intent intent = new Intent(getApplicationContext(), CompositionList.class);			
-		intent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Scores");
+		final Intent intent = new Intent(getApplicationContext(), CompositionList.class);
 		startActivity(intent);
 	}
 
 	public void onComposersClick(View view) {
-		final Intent intent = new Intent(getApplicationContext(), ComposerList.class);			
-		intent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, "Composers");
+		final Intent intent = new Intent(getApplicationContext(), ComposerList.class);
 		startActivity(intent);
 	}
 
@@ -200,8 +222,8 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 				Dashboard.this.finish();
 				break;
 			case R.id.d_database_ok:
-				new DownloaderAsyncTask().execute(null);
-				//getLoaderManager().initLoader(arg0, arg1, arg2)
+				new DownloaderAsyncTask().execute();
+				// getLoaderManager().initLoader(arg0, arg1, arg2)
 				this.dismiss();
 				break;
 			default:
@@ -256,7 +278,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 				while ((bufferLength = is.read(buffer)) > 0) {
 					out.write(buffer, 0, bufferLength);
 					downloadedSize += bufferLength;
-					publishProgress((int)(downloadedSize/fileLength*100));
+					publishProgress((int) (downloadedSize / fileLength * 100));
 				}
 				out.close();
 			} catch (MalformedURLException e) {
@@ -265,7 +287,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 			} catch (IOException e) {
 				e.printStackTrace();
 				return false;
-			} 
+			}
 			return true;
 		}
 
@@ -278,7 +300,7 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 			} else {
 				createAlertDialog();
 			}
-			
+
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
 		}
 
@@ -291,7 +313,8 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-		return new CursorLoader(this, ClassicoProvider.RECENT_TITLES_URI, null, null, null, "_id DESC");
+		return new CursorLoader(this, ClassicoProvider.RECENT_TITLES_URI, null, null, null,
+				"_id DESC");
 	}
 
 	@Override
@@ -308,38 +331,35 @@ public class Dashboard extends GDActivity implements LoaderCallbacks<Cursor>, On
 	@Override
 	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 		// TODO Auto-generated method stub
-		Uri data = Uri.withAppendedPath(ClassicoProvider.RECENT_TITLES_URI,
-				String.valueOf(arg3));
-		//		Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
-		final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);			
+		Uri data = Uri.withAppendedPath(ClassicoProvider.RECENT_TITLES_URI, String.valueOf(arg3));
+		// Toast.makeText(this, data.toString(), Toast.LENGTH_SHORT).show();
+		final Intent scoreIntent = new Intent(getApplicationContext(), ScoreList.class);
 		scoreIntent.setData(data);
-		scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 		startActivity(scoreIntent);
 	}
-	
+
 	private void createAlertDialog() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage("A problem occur by loading database. Would you try again?")
-		.setCancelable(false)
-		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				new DownloaderAsyncTask().execute(null);
-			}
-		})
-		.setNegativeButton("No", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				dialog.cancel();
-				finish();
-			}
-		});
+				.setCancelable(false)
+				.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						new DownloaderAsyncTask().execute();
+					}
+				}).setNegativeButton("No", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+						finish();
+					}
+				});
 		AlertDialog alert = builder.create();
 		alert.show();
 	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
-		
+
 		if (mRecentlyTitlesAdapter.getCursor() != null)
 			mRecentlyTitlesAdapter.getCursor().close();
 	}

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Classico" parent="@style/Theme.GreenDroid.NoTitleBar">
-<!--         <item name="gdActionBarBackground">@android:color/black</item> -->
-
-    </style>
-</resources>

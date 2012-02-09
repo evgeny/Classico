@@ -1,67 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="de.evgeny.classico"
-      android:versionCode="3"
-      android:versionName="1.0.2">
+    package="de.evgeny.classico"
+    android:versionCode="3"
+    android:versionName="1.0.2" >
 
-      <uses-permission android:name="android.permission.INTERNET"/>
-      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-      
-      <uses-sdk android:minSdkVersion="8" />
-      
-    <application android:icon="@drawable/imslp" 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="14" />
+
+    <application
+        android:icon="@drawable/ic_home"
         android:label="@string/app_name"
-        android:name="de.evgeny.classico.ClassicoApplication"
-        android:theme="@style/Theme.Classico">
-    
-        <activity android:name=".SearchableActivity"
-                  android:label="@string/app_name"
-                  android:launchMode="singleTop">
-
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".SearchableActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTop" >
             <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />                
+                <action android:name="android.intent.action.SEARCH" />
             </intent-filter>
-			 
-            <meta-data android:name="android.app.searchable"
-                       android:resource="@xml/searchable" />
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
         </activity>
-        
-        <activity android:name=".Dashboard"
-            android:launchMode="singleTop">
-        
+        <activity
+            android:name=".Dashboard"
+            android:launchMode="singleTop" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            
             <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />                
+                <action android:name="android.intent.action.SEARCH" />
             </intent-filter>
-            
-            <meta-data android:name="android.app.searchable"
-                       android:resource="@xml/searchable" />
-            
-<!--             <meta-data android:name="android.app.default_searchable" -->
-<!--                    android:value=".SearchableActivity" /> -->
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+
+            <!-- <meta-data android:name="android.app.default_searchable" -->
+            <!-- android:value=".SearchableActivity" /> -->
         </activity>
-        
-        <activity android:name=".PartitureViewer"
-                  android:theme="@android:style/Theme.NoTitleBar" />
-		                  
-        <activity android:name=".CompositionList" 
-            android:screenOrientation="portrait"/>
-            
-        <activity android:name=".ComposerList" 
-            android:screenOrientation="portrait"/>
-                  
-        <activity android:name=".ScoreList"/>
-                   
-        <activity android:name=".GestureActivity" 
+        <activity
+            android:name=".PartitureViewer"
             android:theme="@android:style/Theme.NoTitleBar" />
-            
-        <provider android:name=".ClassicoProvider"
-            android:authorities="de.evgeny.classico.composerprovider"/>
-                    
+        <activity
+            android:name=".CompositionList"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ComposerList"
+            android:screenOrientation="portrait" />
+        <activity android:name=".ScoreList" />
+        <activity
+            android:name=".GestureActivity"
+            android:theme="@android:style/Theme.NoTitleBar" />
+
+        <provider
+            android:name=".ClassicoProvider"
+            android:authorities="de.evgeny.classico.composerprovider" />
     </application>
-    
-</manifest> 
+
+</manifest>

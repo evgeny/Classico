@@ -2,9 +2,9 @@ package de.evgeny.classico;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.widget.AlphabetIndexer;
 import android.widget.SectionIndexer;
-import android.widget.SimpleCursorAdapter;
 
 public class ClassicoListAdapter extends SimpleCursorAdapter implements SectionIndexer {
 
@@ -12,7 +12,7 @@ public class ClassicoListAdapter extends SimpleCursorAdapter implements SectionI
 	
 	public ClassicoListAdapter(Context context, int layout, Cursor c,
 			String[] from, int[] to) {
-		super(context, layout, c, from, to);
+		super(context, layout, c, from, to, 0);
 		mAlphaIndexer = new AlphabetIndexer(c, 1, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	}
 

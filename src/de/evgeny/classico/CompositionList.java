@@ -1,7 +1,5 @@
 package de.evgeny.classico;
 
-import greendroid.app.ActionBarActivity;
-import greendroid.app.GDListActivity;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -12,14 +10,16 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.actionbar.ActionBarActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
 
 import com.flurry.android.FlurryAgent;
 
-public class CompositionList extends GDListActivity {
+public class CompositionList extends ActionBarActivity {
 	
 	private static final String TAG = CompositionList.class.getSimpleName();
 	private String composer;
@@ -28,12 +28,13 @@ public class CompositionList extends GDListActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		setContentView(R.layout.composer_list);
 		final Bundle bundle = getIntent().getExtras();
 		composer = bundle.getString("composer");
 		Log.d(TAG, "choosed composer " + composer);
 		
 		if (composer == null) {
-			new AsyncCursorLoader().execute(null);
+			new AsyncCursorLoader().execute();
 		} else new AsyncCursorLoader().execute(composer);
 	}
 	
@@ -96,11 +97,15 @@ public class CompositionList extends GDListActivity {
 			ClassicoListAdapter listAdapter = new ClassicoListAdapter(
 					CompositionList.this, android.R.layout.simple_list_item_1, 
 					cursor, new String[]{ClassicoDatabase.KEY_COMPOSITION}, new int[]{android.R.id.text1});
+			ListView list = (ListView)findViewById(android.R.id.list);
+		
+			list.setAdapter(listAdapter);
+//			setListAdapter(listAdapter);
 			
-			setListAdapter(listAdapter);
-			
-			getListView().setFastScrollEnabled(true);
-			getListView().setOnItemClickListener(new OnItemClickListener() {
+			list.setFastScrollEnabled(true);
+//			getListView().setFastScrollEnabled(true);
+			list.setOnItemClickListener(new OnItemClickListener() {
+//			getListView().setOnItemClickListener(new OnItemClickListener() {
 
 				@Override
 				public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
@@ -109,7 +114,6 @@ public class CompositionList extends GDListActivity {
 					Uri data = Uri.withAppendedPath(ClassicoProvider.CONTENT_URI,
 							String.valueOf(arg3));
 					scoreIntent.setData(data);
-					scoreIntent.putExtra(ActionBarActivity.GD_ACTION_BAR_TITLE, ScoreList.TITLE);
 					startActivity(scoreIntent);
 				}
 			});

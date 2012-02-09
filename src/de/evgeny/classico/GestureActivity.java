@@ -65,7 +65,7 @@ public class GestureActivity extends Activity {
 	
 	private final int cacheSize = 4; //use even numbers
 	private int currentPageNumber;
-	private int lastPageNumber;// = 1000; //bad decision, but it's work for now
+	private int lastPageNumber;
 	private File imslpDir;
 
 	private ImageView mImageView;
@@ -108,8 +108,8 @@ public class GestureActivity extends Activity {
 		mDialog.setMessage("Loading next page...");
 
 
-		//Find the dir to save cached images
-		imslpDir = new File(Environment.getExternalStorageDirectory(),"Classico/" + mImslp);			
+		//Create directory to save cached images
+		imslpDir = new File(getApplicationContext().getExternalCacheDir(), mImslp);
 		if(!imslpDir.exists()) {
 			imslpDir.mkdirs();
 		}
