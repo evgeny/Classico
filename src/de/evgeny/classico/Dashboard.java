@@ -161,19 +161,6 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 		return super.onOptionsItemSelected(item);
 	}
 
-	// @Override
-	// public boolean onHandleActionBarItemClick(ActionBarItem item, int
-	// position) {
-	// switch (item.getItemId()) {
-	// case R.id.action_bar_search:
-	// onSearchRequested();
-	// break;
-	// default:
-	// return super.onHandleActionBarItemClick(item, position);
-	// }
-	// return true;
-	// }
-
 	public void onSearchButtonClick(final View view) {
 		onSearchRequested();
 	}
@@ -354,13 +341,5 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 				});
 		AlertDialog alert = builder.create();
 		alert.show();
-	}
-
-	@Override
-	protected void onPause() {
-		super.onPause();
-
-		if (mRecentlyTitlesAdapter.getCursor() != null)
-			mRecentlyTitlesAdapter.getCursor().close();
 	}
 }
