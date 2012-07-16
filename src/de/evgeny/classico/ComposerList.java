@@ -70,12 +70,10 @@ public class ComposerList extends ActionBarActivity implements LoaderCallbacks<C
 	@Override
 	public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
 		mAdapter.swapCursor(arg1);
-
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
 		mAdapter.swapCursor(null);
-
 	}
 }
