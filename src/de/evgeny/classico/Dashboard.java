@@ -18,10 +18,11 @@ import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.actionbar.ActionBarActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -39,13 +40,14 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.example.android.actionbarcompat.ActionBarActivity;
 import com.flurry.android.FlurryAgent;
 
 /**
  * Start screen of classico app. Show recently partiture.
  * 
  * @author Evgeny Zinovyev
- *
+ * 
  */
 public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Cursor>,
 		OnItemClickListener {
@@ -64,13 +66,17 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 		setContentView(R.layout.dashboard);
 
 		// check if database exist
-		dbFile = new File(getApplication().getApplicationContext().getExternalCacheDir(),
-				"classico.db");
-		if (!dbFile.exists() || !dbFile.canRead()) {
-			Log.d(TAG, "download database");
-			mDatabaseDialog = new DownloadDialog(this);
-			mDatabaseDialog.show();
-		} else {
+		// dbFile = new File(getApplication().getApplicationContext()
+		// .getExternalCacheDir(), "classico.db");
+		// if (!dbFile.exists() || !dbFile.canRead()) {
+		// Log.d(TAG, "download database");
+		// mDatabaseDialog = new DownloadDialog(this);
+		// mDatabaseDialog.show();
+		// } else {
+		// fillRecentScoresList();
+		// }
+
+		if (checkDatabase()) {
 			fillRecentScoresList();
 		}
 
@@ -80,6 +86,8 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 	@Override
 	protected void onResume() {
 		super.onResume();
+		
+		Log.d(TAG, "onResume(): ");
 
 		if ((mDatabaseDialog == null) || (!mDatabaseDialog.isShowing())) {
 			getSupportLoaderManager().restartLoader(0, null, this);
@@ -121,6 +129,36 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 		super.onStop();
 
 		FlurryAgent.onEndSession(this);
+	}
+
+	private boolean checkDatabase() {
+		Log.d(TAG, "checkDatabase(): ");
+		if ((mDatabaseDialog != null) && mDatabaseDialog.isShowing()) {
+			mDatabaseDialog.cancel();
+		}
+		dbFile = new File(getApplication().getApplicationContext().getExternalCacheDir(),
+				"classico.db");
+		ClassicoDatabase.DATABASE_NAME = dbFile.getAbsolutePath();
+		if (!dbFile.exists() || !dbFile.canRead()) {
+			Log.d(TAG, "download database file");
+			mDatabaseDialog = new DownloadDialog(this);
+			mDatabaseDialog.show();
+			return false;
+		} else {
+			try {
+				final SQLiteDatabase db = SQLiteDatabase.openDatabase(
+						ClassicoDatabase.DATABASE_NAME, null, SQLiteDatabase.OPEN_READWRITE);
+				db.close();
+				Log.d(TAG, "database is ok");
+			} catch (SQLiteException e) {
+				Log.d(TAG, "database is corrupt");
+				dbFile.delete();
+				mDatabaseDialog = new DownloadDialog(this);
+				mDatabaseDialog.show();
+				return false;
+			}
+			return true;
+		}
 	}
 
 	private void fillRecentScoresList() {
@@ -283,7 +321,9 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 			super.onPostExecute(result);
 			progressDialog.dismiss();
 			if (result) {
-				fillRecentScoresList();
+//				if (checkDatabase()) {
+					fillRecentScoresList();
+//				}
 			} else {
 				createAlertDialog();
 			}
@@ -300,6 +340,7 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+		Log.d(TAG, "onCreateLoader(): "); 
 		return new CursorLoader(this, ClassicoProvider.RECENT_TITLES_URI, null, null, null,
 				"_id DESC");
 	}

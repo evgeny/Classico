@@ -3,7 +3,6 @@ package de.evgeny.classico;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.actionbar.ActionBarActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -14,6 +13,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.example.android.actionbarcompat.ActionBarActivity;
 import com.flurry.android.FlurryAgent;
 
 public class ComposerList extends ActionBarActivity implements LoaderCallbacks<Cursor> {

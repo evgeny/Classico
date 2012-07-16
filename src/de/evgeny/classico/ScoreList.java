@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.actionbar.ActionBarActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -21,10 +20,11 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.example.android.actionbarcompat.ActionBarActivity;
 import com.flurry.android.FlurryAgent;
 
 public class ScoreList extends ActionBarActivity implements LoaderCallbacks<Cursor>,

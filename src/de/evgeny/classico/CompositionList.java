@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.actionbar.ActionBarActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -19,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 
+import com.example.android.actionbarcompat.ActionBarActivity;
 import com.flurry.android.FlurryAgent;
 
 public class CompositionList extends ActionBarActivity implements LoaderCallbacks<Cursor> {
@@ -32,6 +32,8 @@ public class CompositionList extends ActionBarActivity implements LoaderCallback
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.composer_list);
+
+		// final Bundle extras = getIntent().getExtras();
 
 		mAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, null,
 				new String[] { ClassicoDatabase.KEY_COMPOSITION },
@@ -82,7 +84,8 @@ public class CompositionList extends ActionBarActivity implements LoaderCallback
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-		if (arg1.containsKey("composer")) {
+
+		if ((arg1 != null) && arg1.containsKey("composer")) {
 			return new CursorLoader(this, ClassicoProvider.CONTENT_URI, null, null,
 					new String[] { arg1.getString("composer") }, null);
 		} else {

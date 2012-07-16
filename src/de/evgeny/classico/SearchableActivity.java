@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.actionbar.ActionBarActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -16,6 +15,7 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
+import com.example.android.actionbarcompat.ActionBarActivity;
 import com.flurry.android.FlurryAgent;
 
 public class SearchableActivity extends ActionBarActivity {
