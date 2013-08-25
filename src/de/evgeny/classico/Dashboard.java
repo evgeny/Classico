@@ -181,7 +181,8 @@ public class Dashboard extends ActionBarActivity implements LoaderCallbacks<Curs
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater menuInflater = getMenuInflater();
 		menuInflater.inflate(R.menu.main, menu);
-		return super.onCreateOptionsMenu(menu);
+		//return super.onCreateOptionsMenu(menu);
+        return true;
 	}
 
 	@Override
