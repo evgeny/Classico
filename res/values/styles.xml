@@ -11,4 +11,6 @@
         <item name="android:background">@null</item>
     </style>
 
+    <style name="ClassicoTheme" parent="Theme.AppCompat"></style>
+
 </resources>

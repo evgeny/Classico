@@ -39,5 +39,6 @@
 
     <!-- gesture layout -->
     <string name="iv_gesture_layout_image">image</string>
+    <string name="menu_share">share</string>
 
 </resources>
