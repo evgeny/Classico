@@ -7,16 +7,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6c4afccc-0bd2-4905-b507-aa13c575823b" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/libs.xml" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Classico.iml" afterPath="$PROJECT_DIR$/Classico.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/de/evgeny/classico/CompositionList.java" afterPath="$PROJECT_DIR$/src/de/evgeny/classico/CompositionList.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/de/evgeny/classico/Dashboard.java" afterPath="$PROJECT_DIR$/src/de/evgeny/classico/Dashboard.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/de/evgeny/classico/ScoreList.java" afterPath="$PROJECT_DIR$/src/de/evgeny/classico/ScoreList.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/de/evgeny/classico/SearchableActivity.java" afterPath="$PROJECT_DIR$/src/de/evgeny/classico/SearchableActivity.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/compiler.xml" afterPath="$PROJECT_DIR$/.idea/compiler.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/values/strings.xml" afterPath="$PROJECT_DIR$/res/values/strings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/values/styles.xml" afterPath="$PROJECT_DIR$/res/values/styles.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="Classico.iws" />
@@ -468,6 +459,11 @@
       <created>1374946220472</created>
       <updated>1374946220472</updated>
     </task>
+    <task id="LOCAL-00001" summary="add action bar compat, add android studio project files">
+      <created>1377456487746</created>
+      <updated>1377456487746</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -507,6 +503,8 @@
     <option name="myTodoPanelSettings">
       <TodoPanelSettings />
     </option>
+    <MESSAGE value="add action bar compat, add android studio project files" />
+    <option name="LAST_COMMIT_MESSAGE" value="add action bar compat, add android studio project files" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
